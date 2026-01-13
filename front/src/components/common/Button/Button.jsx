@@ -1,17 +1,18 @@
 // src/components/common/Button.jsx
-"use client";
+'use client';
+import './button.css';
 
 export default function Button({
   children,
-  variant = "solid",
-  size = "md",
+  variant = 'solid',
+  size = 'md',
   fullWidth = false,
   disabled = false,
   isLoading = false,
   leftIcon,
   rightIcon,
-  className = "",
-  type = "button",
+  className = '',
+  type = 'button',
   ...props
 }) {
   const isDisabled = disabled || isLoading;
@@ -20,15 +21,15 @@ export default function Button({
     <button
       type={type}
       className={[
-        "btn",
+        'btn',
         `btn--${variant}`,
         `btn--${size}`,
-        fullWidth ? "btn--full" : "",
-        isDisabled ? "btn--disabled" : "",
+        fullWidth ? 'btn--full' : '',
+        isDisabled ? 'btn--disabled' : '',
         className,
       ]
         .filter(Boolean)
-        .join(" ")}
+        .join(' ')}
       disabled={isDisabled}
       {...props}
     >

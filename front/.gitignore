@@ -21,9 +21,11 @@
 /node_modules
 /.pnp
 .pnp.js
+.next
 
 # testing
 /coverage
+/my
 
 # next.js
 /.next/
@@ -114,3 +116,8 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/windows,visualstudiocode,git,nextjs,react
+*storybook.log
+storybook-static
+
+# Cache
+.cache
