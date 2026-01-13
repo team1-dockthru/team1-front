@@ -10,7 +10,10 @@
   border-radius: 12px; /* 필요하면 피그마 값으로 */
   border: 1px solid transparent;
 
-  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .btn__icon {
@@ -79,11 +82,11 @@
 }
 
 /* btn-filled-tonal (연핑크 + 빨강 텍스트: 거절/포기) */
-.btn--filledTonal {
+.btn--filled-tonal {
   background: #ffe6e6; /* 피그마 정확값 있으면 교체 */
-  color: var(--error);
+  color: var(--error, #eb3e3e);
 }
-.btn--filledTonal:hover {
+.btn--filled-tonal:hover {
   background: #ffd6d6;
 }
 
@@ -98,12 +101,12 @@
 }
 
 /* outline-icon (outline + 오른쪽 아이콘/왼쪽 아이콘) */
-.btn--outlineIcon {
+.btn--outline-icon {
   background: #fff;
   color: var(--gray-900);
   border-color: var(--gray-300);
 }
-.btn--outlineIcon:hover {
+.btn--outline-icon:hover {
   background: var(--gray-50);
 }
 
