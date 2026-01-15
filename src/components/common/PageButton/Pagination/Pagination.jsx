@@ -1,7 +1,15 @@
-'use client';
+"use client";
 
-import PageButton from '../PageButton/PageButton';
-import './pagination.css';
+import PageButton from "../PageButton";
+
+import {
+  Pagination as UiPagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -63,48 +71,41 @@ export default function Pagination({
   };
 
   return (
-    <nav className="pagination" aria-label="페이지네이션">
-      <button
-        type="button"
-        className="pagination__arrow font-14-semibold"
+    <UiPagination aria-label="페이지네이션">
+      <PaginationPrevious
         disabled={!canPrev}
         onClick={() => handlePage(safeCurrent - 1)}
-        aria-label="이전 페이지"
-      >
-        ‹
-      </button>
+        className="font-14-semibold bg-[var(--gray-800)] text-[var(--gray-200)] disabled:opacity-50"
+      />
 
-      <ul className="pagination__list">
+      <PaginationContent>
         {items.map((item, idx) => {
-          if (item === '...') {
+          if (item === "...") {
             return (
-              <li key={`dots-${idx}`} className="pagination__dots font-14-medium">
-                …
-              </li>
+              <PaginationItem key={`dots-${idx}`}>
+                <PaginationEllipsis className="font-14-medium" />
+              </PaginationItem>
             );
           }
 
           return (
-            <li key={item}>
+            <PaginationItem key={item}>
               <PageButton
                 page={item}
                 active={item === safeCurrent}
                 onClick={() => handlePage(item)}
+                disabled={disabled}
               />
-            </li>
+            </PaginationItem>
           );
         })}
-      </ul>
+      </PaginationContent>
 
-      <button
-        type="button"
-        className="pagination__arrow font-14-semibold"
+      <PaginationNext
         disabled={!canNext}
         onClick={() => handlePage(safeCurrent + 1)}
-        aria-label="다음 페이지"
-      >
-        ›
-      </button>
-    </nav>
+        className="font-14-semibold bg-[var(--gray-800)] text-[var(--gray-200)] disabled:opacity-50"
+      />
+    </UiPagination>
   );
 }

@@ -1,5 +1,7 @@
 // src/components/common/Chip/Chip.jsx
-import './Chip.css';
+"use client";
+
+import { Badge } from "@/components/ui/badge";
 
 export default function Chip({
   children,
@@ -8,13 +10,8 @@ export default function Chip({
   ...props
 }) {
   return (
-    <span
-      className={['chip', `chip--${variant}`, 'font-13-semibold', className]
-        .filter(Boolean)
-        .join(' ')}
-      {...props}
-    >
+    <Badge variant={variant} className={["font-13-semibold", className].filter(Boolean).join(" ")} {...props}>
       {children}
-    </span>
+    </Badge>
   );
 }
