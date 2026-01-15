@@ -5,7 +5,7 @@ import ProfileMember from '@/assets/icons/ic-profile-member.svg';
 import ProfileAdmin from '@/assets/icons/ic-profile-admin.svg';
 import Logo from '@/assets/icons/logo.svg';
 
-import './Gnb.css';
+import './gnb.css';
 
 export default function Gnb({
   isLoggedIn = false,
