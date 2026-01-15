@@ -2,7 +2,9 @@
 'use client';
 
 import { useId, useState } from 'react';
-import './input.css';
+
+import { cn } from '@/lib/utils';
+import { Input as UiInput } from '@/components/ui/input';
 
 export default function Input({
   label,
@@ -22,17 +24,26 @@ export default function Input({
   const actualType = isPassword ? (showPassword ? 'text' : 'password') : type;
 
   return (
-    <div className={['inputField', className].filter(Boolean).join(' ')}>
+    <div className={cn('flex flex-col gap-2', className)}>
       {label ? (
-        <label className="inputField__label font-14-medium" htmlFor={id}>
+        <label className="font-14-medium text-[var(--gray-800)]" htmlFor={id}>
           {label}
         </label>
       ) : null}
 
-      <div className={`inputField__box ${errorText ? 'inputField__box--error' : ''}`}>
-        <input
+      <div
+        className={cn(
+          'relative w-full rounded-full border bg-white',
+          errorText ? 'border-[var(--error)]' : 'border-[var(--gray-300)]',
+        )}
+      >
+        <UiInput
           id={id}
-          className="inputField__input font-14-regular"
+          className={cn(
+            'font-14-regular pr-12',
+            // wrapper에서 border를 잡기 때문에 input 자체 border는 제거
+            'border-0 focus-visible:ring-0 focus-visible:ring-offset-0',
+          )}
           value={value}
           onChange={onChange}
           placeholder={placeholder}
@@ -44,22 +55,24 @@ export default function Input({
         {isPassword ? (
           <button
             type="button"
-            className="inputField__iconBtn"
+            className="absolute top-1/2 right-4 inline-flex size-8 -translate-y-1/2 items-center justify-center"
             aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
             onClick={() => setShowPassword((prev) => !prev)}
           >
             <img
-              className="inputField__iconImg"
+              className="size-5 opacity-60"
               src={showPassword ? '/icons/ic-eye-on.svg' : '/icons/ic-eye-off.svg'}
               alt=""
             />
           </button>
         ) : rightIcon ? (
-          <span className="inputField__icon">{rightIcon}</span>
+          <span className="absolute top-1/2 right-4 inline-flex size-8 -translate-y-1/2 items-center justify-center">
+            {rightIcon}
+          </span>
         ) : null}
       </div>
 
-      {errorText ? <p className="inputField__error font-14-regular">{errorText}</p> : null}
+      {errorText ? <p className="font-14-regular text-[var(--error)]">{errorText}</p> : null}
     </div>
   );
 }

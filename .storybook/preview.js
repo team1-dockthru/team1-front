@@ -1,6 +1,4 @@
-import '../src/styles/global.css';
-
-export const parameters = {};
+import '../src/app/globals.css';
 
 /** @type { import('@storybook/nextjs').Preview } */
 const preview = {

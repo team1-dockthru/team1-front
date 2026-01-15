@@ -1,6 +1,7 @@
 // src/components/common/Button.jsx
-'use client';
-import './button.css';
+"use client";
+
+import { Button as UiButton } from "@/components/ui/button";
 
 export default function Button({
   children,
@@ -15,27 +16,20 @@ export default function Button({
   type = 'button',
   ...props
 }) {
-  const isDisabled = disabled || isLoading;
-
   return (
-    <button
+    <UiButton
       type={type}
-      className={[
-        'btn',
-        `btn--${variant}`,
-        `btn--${size}`,
-        fullWidth ? 'btn--full' : '',
-        isDisabled ? 'btn--disabled' : '',
-        className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
-      disabled={isDisabled}
+      variant={variant}
+      size={size}
+      fullWidth={fullWidth}
+      disabled={disabled}
+      isLoading={isLoading}
+      leftIcon={leftIcon}
+      rightIcon={rightIcon}
+      className={className}
       {...props}
     >
-      {leftIcon ? <span className="btn__icon">{leftIcon}</span> : null}
-      <span className="btn__text">{children}</span>
-      {rightIcon ? <span className="btn__icon">{rightIcon}</span> : null}
-    </button>
+      {children}
+    </UiButton>
   );
 }
