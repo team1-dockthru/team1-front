@@ -15,9 +15,8 @@ export default function ListItem({
       <button
         type="button"
         className={cn(
-          "flex w-full items-center justify-between bg-transparent p-0 text-left",
-          "h-[47px]",
-          clickable ? "cursor-pointer" : "cursor-default"
+          "flex w-full items-center justify-between bg-transparent px-4 py-3 text-left",
+          clickable ? "cursor-pointer" : "cursor-default transition-colors hover:bg-[var(--gray-50)]"
         )}
         onClick={onClick}
         disabled={!clickable}
@@ -36,14 +35,14 @@ export default function ListItem({
           </div>
         </div>
 
-        <div className="flex self-stretch items-end gap-4 pb-3">
+        <div className="flex items-center gap-6">
           {meta ? (
-            <div className="font-14-regular inline-flex items-center gap-1.5 text-[var(--gray-500)]">
+            <div className="font-14-regular flex items-center gap-1 text-[var(--gray-500)]">
               {meta}
             </div>
           ) : null}
           {action ? (
-            <div className="font-14-medium inline-flex items-center gap-1.5 text-[var(--gray-500)]">
+            <div className="font-14-medium flex items-center gap-1 text-[var(--gray-500)]">
               {action}
             </div>
           ) : null}
