@@ -2,9 +2,11 @@
 
 import List from './List';
 import ListItem from './ListItem';
-import Chip from '../Chip/Chip';
 
-import ExitIcon from '@/assets/icons/ic-exit.svg';
+import CrownIcon from '@/assets/icons/ic-crown.svg';
+import ProfileIcon from '@/assets/icons/ic-profile-member.svg';
+import HeartIcon from '@/assets/icons/ic-heart-active-l.svg';
+import ArrowRightIcon from '@/assets/icons/ic-arrow-direction-active-right.svg';
 
 export default {
   title: 'Molecule/List',
@@ -12,29 +14,66 @@ export default {
 };
 
 export function Basic() {
+  const mockData = [
+    {
+      rank: '01',
+      name: '개발life',
+      role: '전문가',
+      likes: '9,999...',
+      isTop: true,
+    },
+    {
+      rank: '02',
+      name: '라우터장인',
+      role: '전문가',
+      likes: '1,800',
+    },
+    {
+      rank: '03',
+      name: 'DevCat99',
+      role: '일반',
+      likes: '700',
+    },
+  ];
+
   return (
-    <div style={{ padding: 24, width: 520 }}>
-      <List>
-        <ListItem
-          left={<Chip variant="type-nextjs">Next.js</Chip>}
-          title="Next.js 공식 문서 읽기"
-          subtitle="라우팅/레이아웃 정리"
-          meta="좋아요 12"
-          action={
-            <>
-              작업물 보기 <ExitIcon className="h-4 w-4" />
-            </>
-          }
-          onClick={() => {}}
-        />
-        <ListItem
-          left={<Chip variant="type-api">API</Chip>}
-          title="API 명세 검토"
-          subtitle="에러 케이스 정리"
-          meta="좋아요 3"
-          onClick={() => {}}
-        />
-      </List>
+    <div style={{ padding: 24, width: '100%', maxWidth: 800, backgroundColor: 'white' }}>
+      <div className="rounded-xl border border-[var(--gray-200)] p-4 shadow-sm">
+        <h3 className="font-18-bold mb-4 px-2">참여 현황</h3>
+        <List>
+          {mockData.map((item) => (
+            <ListItem
+              key={item.rank}
+              left={
+                <div className="flex items-center gap-4">
+                  <div className="flex w-[60px] items-center justify-center gap-1 rounded-full bg-[var(--brand-black)] py-1 text-[var(--brand-yellow)]">
+                    {item.isTop && <CrownIcon className="h-3 w-3" />}
+                    <span className="font-14-bold">{item.rank}</span>
+                  </div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand-yellow)]">
+                    <ProfileIcon className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              }
+              title={item.name}
+              subtitle={item.role}
+              meta={
+                <>
+                  <HeartIcon className="h-5 w-5 text-[var(--brand-yellow)]" />
+                  <span>{item.likes}</span>
+                </>
+              }
+              action={
+                <div className="flex items-center gap-1 cursor-pointer">
+                  <span>작업물 보기</span>
+                  <ArrowRightIcon className="h-5 w-5" />
+                </div>
+              }
+              onClick={() => console.log(`${item.name} 클릭`)}
+            />
+          ))}
+        </List>
+      </div>
     </div>
   );
 }

@@ -4,6 +4,9 @@ import { useId } from "react";
 
 import { cn } from "@/lib/utils";
 
+import RadioDefaultIcon from '@/assets/icons/ic-radio-default.svg';
+import RadioCheckedIcon from '@/assets/icons/ic-radio-checked.svg';
+
 export default function Radio({
   name,
   checked,
@@ -34,23 +37,14 @@ export default function Radio({
         onChange={() => onChange?.(value)}
         disabled={disabled}
       />
-      <span
-        aria-hidden="true"
-        className={cn(
-          "inline-flex size-7 items-center justify-center rounded-full border bg-white",
-          "border-[var(--gray-300)]",
-          "peer-checked:border-[var(--gray-900)] peer-checked:bg-[var(--gray-900)]",
-          "peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--brand-yellow)]"
-        )}
-      >
-        <span
-          className={cn(
-            "block size-2 rounded-full bg-white opacity-0",
-            "peer-checked:opacity-100"
-          )}
-        />
-      </span>
-      {label ? <span className="font-14-regular">{label}</span> : null}
+      
+      {checked ? (
+        <RadioCheckedIcon className="h-6 w-6" />
+      ) : (
+        <RadioDefaultIcon className="h-6 w-6" />
+      )}
+
+      {label ? <span className="font-14-regular pt-[1px]">{label}</span> : null}
     </label>
   );
 }
