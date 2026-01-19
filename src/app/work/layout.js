@@ -1,5 +1,5 @@
 // import Gnb from '@/components/common/GNB/Gnb';
-import '../../styles/global.css';
+import '../globals.css';
 
 export default function WorkLayout({ children }) {
   return (

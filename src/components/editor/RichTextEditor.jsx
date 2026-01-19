@@ -78,6 +78,13 @@ export default function RichTextEditor({ content, onChange, placeholder = '번�
     }
   }, [editor]); // editor만 dependency로 하여 한 번만 호출
 
+  // content prop이 변경되면 에디터 내용 업데이트
+  useEffect(() => {
+    if (editor && content !== undefined && editor.getHTML() !== content) {
+      editor.commands.setContent(content, false); // emitUpdate: false로 설정하여 무한 루프 방지
+    }
+  }, [content, editor]);
+
   if (!editor) {
     return null;
   }
