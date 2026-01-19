@@ -66,6 +66,19 @@ body {
   line-height: 1;
 }
 
+/* ===== Logo ===== */
+.font-logo {
+  color: var(--gray-600);
+  font-family: var(--font-quantico), sans-serif;
+  font-size: 22.68px;
+  font-weight: 700;
+  font-style: normal;
+  line-height: normal;
+  letter-spacing: 0.41px;
+  font-feature-settings: 'liga' off, 'clig' off;
+  text-align: justify;
+}
+
 /* ===== 22pt ===== */
 .font-22-bold {
   font-size: 22px;
