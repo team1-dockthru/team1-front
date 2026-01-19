@@ -12,7 +12,7 @@ import ToggleDown from "@/assets/icons/ic-toggle-down.svg";
 import { cn } from "@/lib/utils";
 
 const DEV_PAGES = [
-  { name: "스타일 가이드", href: "/wip" },
+  { name: "스타일 가이드", href: "/style-guide" },
   { name: "비회원 페이지", href: "/" },
   { name: "회원 페이지", href: "/wip" },
   { name: "나의 챌린지", href: "/wip" },
@@ -50,9 +50,9 @@ export default function Gnb({
     <header className="flex h-[60px] items-center border-b border-[var(--gray-200)] bg-white">
       <div className="mx-auto flex h-full w-full max-w-[1200px] items-center gap-6 px-6">
         {/* Left */}
-        <Link href="/wip" className="inline-flex shrink-0 items-center gap-2">
+        <Link href="/" className="inline-flex shrink-0 items-center gap-2">
           <Logo className={cn("h-[20.25px] w-[17.55px]", "max-[600px]:h-[13.5px] max-[600px]:w-[11.7px]")} />
-          <span className="font-logo">Docthru</span>
+          <span className="font-logo text-[22.68px]">Docthru</span>
         </Link>
 
         {/* Admin menu */}

@@ -33,14 +33,14 @@ export default function Input({
 
       <div
         className={cn(
-          'relative w-full rounded-full border bg-white',
+          'relative w-full rounded-[12px] border bg-white',
           errorText ? 'border-[var(--error)]' : 'border-[var(--gray-300)]',
         )}
       >
         <UiInput
           id={id}
           className={cn(
-            'font-14-regular pr-12',
+            'font-14-regular pr-12 h-[48px] md:h-14',
             // wrapper에서 border를 잡기 때문에 input 자체 border는 제거
             'border-0 focus-visible:ring-0 focus-visible:ring-offset-0',
           )}

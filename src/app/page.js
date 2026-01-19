@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Gnb from "@/components/common/GNB/Gnb";
 import Button from "@/components/common/Button/Button";
 
@@ -31,7 +32,7 @@ export default function Home() {
           <div className="container relative mx-auto flex flex-col items-center px-6 py-20 text-center text-white">
             <div className="inline-flex items-center gap-2">
               <Logo className="h-[20.25px] w-[17.55px]" />
-              <span className="font-logo">Docthru</span>
+              <span className="font-logo text-[22.68px]">Docthru</span>
             </div>
             <h1 className="mt-5 max-w-2xl text-3xl font-semibold leading-tight sm:text-4xl">
               함께 번역하며 성장하는
@@ -39,12 +40,14 @@ export default function Home() {
               개발자의 새로운 영어 습관
             </h1>
             <div className="mt-8">
-              <Button
-                variant="outline"
-                size="lg"
-              >
-                번역 시작하기
-              </Button>
+              <Link href="/login">
+                <Button
+                  variant="outline"
+                  size="lg"
+                >
+                  번역 시작하기
+                </Button>
+              </Link>
             </div>
           </div>
         </section>
@@ -122,9 +125,11 @@ export default function Home() {
             <h3 className="text-2xl font-bold text-[var(--gray-900)]">
               함께 번역하고 성장하세요!
             </h3>
-            <Button className="mt-6" size="lg">
-              번역 시작하기
-            </Button>
+            <Link href="/login">
+              <Button className="mt-6" size="lg">
+                번역 시작하기
+              </Button>
+            </Link>
           </div>
         </section>
       </main>
