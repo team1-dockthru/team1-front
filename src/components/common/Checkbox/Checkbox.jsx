@@ -4,6 +4,9 @@ import { useId } from "react";
 
 import { cn } from "@/lib/utils";
 
+import CheckboxDefaultIcon from '@/assets/icons/ic-chekbox-default.svg';
+import CheckboxCheckedIcon from '@/assets/icons/ic-checkbox-checked.svg';
+
 export default function Checkbox({ checked, onChange, label, disabled = false, className }) {
   const id = useId();
 
@@ -24,23 +27,14 @@ export default function Checkbox({ checked, onChange, label, disabled = false, c
         onChange={(e) => onChange?.(e.target.checked)}
         disabled={disabled}
       />
-      <span
-        aria-hidden="true"
-        className={cn(
-          "inline-flex size-7 items-center justify-center rounded-md border bg-white",
-          "border-[var(--gray-300)]",
-          "peer-checked:border-[var(--gray-900)] peer-checked:bg-[var(--gray-900)]",
-          "peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--brand-yellow)]"
-        )}
-      >
-        <span
-          className={cn(
-            "block h-[6px] w-[10px] rotate-[-45deg] border-b-2 border-l-2 border-white opacity-0",
-            "peer-checked:opacity-100"
-          )}
-        />
-      </span>
-      {label ? <span className="font-14-regular">{label}</span> : null}
+      
+      {checked ? (
+        <CheckboxCheckedIcon className="h-[18px] w-[18px]" />
+      ) : (
+        <CheckboxDefaultIcon className="h-[18px] w-[18px]" />
+      )}
+
+      {label ? <span className="font-14-regular pt-[1px]">{label}</span> : null}
     </label>
   );
 }
