@@ -1,3 +1,9 @@
+import { dirname, resolve as resolvePath } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 /** @type { import('@storybook/nextjs').StorybookConfig } */
 const config = {
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
@@ -6,6 +12,15 @@ const config = {
   staticDirs: ['../public'],
 
   webpackFinal: async (config) => {
+    // Next app alias(@/*) to work in Storybook as well
+    const srcPath = resolvePath(__dirname, '../src');
+    config.resolve = config.resolve || {};
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      '@': srcPath,
+      '@/': `${srcPath}/`,
+    };
+
     // 1) 기존 rule 중 svg를 처리하는 게 있으면 svg만 제외해서 충돌 방지
     config.module.rules = config.module.rules.map((rule) => {
       const test = rule?.test;

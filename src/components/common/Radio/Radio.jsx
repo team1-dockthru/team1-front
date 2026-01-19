@@ -1,16 +1,35 @@
-'use client';
+"use client";
 
-import { useId } from 'react';
-import './Radio.css';
+import { useId } from "react";
 
-export default function Radio({ name, checked, onChange, label, disabled = false, value }) {
+import { cn } from "@/lib/utils";
+
+import RadioDefaultIcon from '@/assets/icons/ic-radio-default.svg';
+import RadioCheckedIcon from '@/assets/icons/ic-radio-checked.svg';
+
+export default function Radio({
+  name,
+  checked,
+  onChange,
+  label,
+  disabled = false,
+  value,
+  className,
+}) {
   const id = useId();
 
   return (
-    <label className={`radio ${disabled ? 'radio--disabled' : ''}`} htmlFor={id}>
+    <label
+      className={cn(
+        "inline-flex items-center gap-2.5",
+        disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer",
+        className
+      )}
+      htmlFor={id}
+    >
       <input
         id={id}
-        className="radio__input"
+        className="peer sr-only"
         type="radio"
         name={name}
         value={value}
@@ -18,8 +37,14 @@ export default function Radio({ name, checked, onChange, label, disabled = false
         onChange={() => onChange?.(value)}
         disabled={disabled}
       />
-      <span className="radio__circle" aria-hidden="true" />
-      {label ? <span className="radio__label font-14-regular">{label}</span> : null}
+      
+      {checked ? (
+        <RadioCheckedIcon className="h-6 w-6" />
+      ) : (
+        <RadioDefaultIcon className="h-6 w-6" />
+      )}
+
+      {label ? <span className="font-14-regular pt-[1px]">{label}</span> : null}
     </label>
   );
 }
