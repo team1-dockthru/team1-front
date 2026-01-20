@@ -8,6 +8,7 @@ import ProfileMember from "@/assets/icons/ic-profile-member.svg";
 import ProfileAdmin from "@/assets/icons/ic-profile-admin.svg";
 import Logo from "@/assets/icons/ic-logo.svg";
 import ToggleDown from "@/assets/icons/ic-toggle-down.svg";
+import Container from "@/components/common/Container/Container";
 
 import { cn } from "@/lib/utils";
 
@@ -48,7 +49,7 @@ export default function Gnb({
 
   return (
     <header className="flex h-[60px] items-center border-b border-[var(--gray-200)] bg-white">
-      <div className="mx-auto flex h-full w-full max-w-[1200px] items-center gap-6 px-6">
+      <Container className="flex h-full items-center gap-6">
         {/* Left */}
         <Link href="/" className="inline-flex shrink-0 items-center gap-2">
           <Logo className={cn("h-[20.25px] w-[17.55px]", "max-[600px]:h-[13.5px] max-[600px]:w-[11.7px]")} />
@@ -123,7 +124,7 @@ export default function Gnb({
             </>
           )}
         </div>
-      </div>
+      </Container>
     </header>
   );
 }
