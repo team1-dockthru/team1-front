@@ -11,17 +11,17 @@ const badgeVariants = cva(
     variants: {
       variant: {
         // type-*
-        "type-nextjs": "rounded-lg bg-[#79e16a] px-3 py-[3px] text-[var(--gray-900)]",
-        "type-api": "rounded-lg bg-[#ff905e] px-3 py-[3px] text-[var(--gray-900)]",
-        "type-career": "rounded-lg bg-[#7eb2ee] px-3 py-[3px] text-[var(--gray-900)]",
-        "type-modernjs": "rounded-lg bg-[#f66e6b] px-3 py-[3px] text-[var(--gray-900)]",
-        "type-web": "rounded-lg bg-[#f66e6b] px-3 py-[3px] text-[var(--gray-900)]",
+        "type-nextjs": "rounded-[8px] bg-[#79e16a] px-3 py-[3px] text-[var(--gray-900)]",
+        "type-api": "rounded-[8px] bg-[#ff905e] px-3 py-[3px] text-[var(--gray-900)]",
+        "type-career": "rounded-[8px] bg-[#7eb2ee] px-3 py-[3px] text-[var(--gray-900)]",
+        "type-modernjs": "rounded-[8px] bg-[#f66e6b] px-3 py-[3px] text-[var(--gray-900)]",
+        "type-web": "rounded-[8px] bg-[#fae444] px-3 py-[3px] text-[var(--gray-900)]",
 
         // category-*
         "category-doc":
-          "rounded-lg border border-[var(--gray-300)] bg-white px-[7px] py-[5px] text-[var(--gray-800)]",
+          "rounded-[8px] border border-[var(--gray-300)] bg-white px-[7px] py-[5px] text-[var(--gray-800)]",
         "category-blog":
-          "rounded-lg border border-[var(--gray-300)] bg-white px-[7px] py-[5px] text-[var(--gray-800)]",
+          "rounded-[8px] border border-[var(--gray-300)] bg-white px-[7px] py-[5px] text-[var(--gray-800)]",
 
         // status-*
         "status-pending": "rounded bg-[#fffde7] px-2 py-1 text-[#f0b400]",

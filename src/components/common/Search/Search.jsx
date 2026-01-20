@@ -33,8 +33,8 @@ export default function Search({
 
   return (
     <div className={cn('relative w-full max-w-[800px]', className)}>
-      <div className="absolute top-1/2 left-4 -translate-y-1/2">
-        <SearchIcon className="size-6 text-[var(--gray-900)]" />
+      <div className="absolute top-1/2 left-3 -translate-y-1/2 flex items-center">
+        <SearchIcon className="size-5 text-[var(--gray-900)]" />
       </div>
       <input
         type="text"
@@ -42,7 +42,7 @@ export default function Search({
         onChange={handleChange}
         placeholder={placeholder}
         className={cn(
-          'h-12 w-full rounded-full border border-[var(--gray-200)] bg-white pl-12 pr-6 outline-none',
+          'h-10 w-full rounded-full border border-[var(--gray-200)] bg-white pl-10 pr-3 outline-none',
           'font-14-regular text-[var(--gray-900)] placeholder:text-[var(--gray-400)]',
           'transition-all focus:border-[var(--gray-400)]',
         )}

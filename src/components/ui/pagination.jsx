@@ -10,7 +10,7 @@ function Pagination({ className, ...props }) {
     <nav
       role="navigation"
       aria-label="pagination"
-      className={cn("mx-auto flex w-full justify-center", className)}
+      className={cn("mx-auto flex w-full justify-center items-center gap-1", className)}
       {...props}
     />
   );
@@ -39,28 +39,24 @@ function PaginationLink({ className, isActive, ...props }) {
 function PaginationPrevious({ className, ...props }) {
   return (
     <Button
-      variant="solid"
+      variant="ghost"
       size="md"
-      className={cn("h-10 w-10 rounded-full px-0 text-[var(--gray-200)]", className)}
+      className={cn("h-12 w-12 rounded-full px-0 text-[var(--gray-400)] hover:bg-transparent", className)}
       aria-label="이전 페이지"
       {...props}
-    >
-      ‹
-    </Button>
+    />
   );
 }
 
 function PaginationNext({ className, ...props }) {
   return (
     <Button
-      variant="solid"
+      variant="ghost"
       size="md"
-      className={cn("h-10 w-10 rounded-full px-0 text-[var(--gray-200)]", className)}
+      className={cn("h-12 w-12 rounded-full px-0 text-[var(--gray-900)] hover:bg-transparent", className)}
       aria-label="다음 페이지"
       {...props}
-    >
-      ›
-    </Button>
+    />
   );
 }
 
@@ -68,7 +64,7 @@ function PaginationEllipsis({ className, ...props }) {
   return (
     <span
       aria-hidden
-      className={cn("inline-flex w-6 justify-center text-[var(--gray-500)]", className)}
+      className={cn("inline-flex h-12 w-6 items-center justify-center text-[var(--gray-500)]", className)}
       {...props}
     >
       …
