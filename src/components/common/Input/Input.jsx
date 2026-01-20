@@ -1,22 +1,25 @@
 // src/components/common/Input/Input.jsx
 'use client';
 
-import { useId, useState } from 'react';
+import { useId, useState, forwardRef } from 'react';
 
 import { cn } from '@/lib/utils';
 import { Input as UiInput } from '@/components/ui/input';
 
-export default function Input({
-  label,
-  value,
-  onChange,
-  placeholder,
-  type = 'text',
-  errorText,
-  rightIcon, // password가 아닐 때 우측 아이콘(예: 달력)
-  className = '',
-  ...props
-}) {
+const Input = forwardRef(function Input(
+  {
+    label,
+    value,
+    onChange,
+    placeholder,
+    type = 'text',
+    errorText,
+    rightIcon, // password가 아닐 때 우측 아이콘(예: 달력)
+    className = '',
+    ...props
+  },
+  ref
+) {
   const id = useId();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -33,16 +36,17 @@ export default function Input({
 
       <div
         className={cn(
-          'relative w-full rounded-full border bg-white',
-          errorText ? 'border-[var(--error)]' : 'border-[var(--gray-300)]',
+          'relative w-full rounded-[12px] border bg-white',
+          errorText ? 'border-[var(--error)]' : 'border-[var(--gray-300)]'
         )}
       >
         <UiInput
           id={id}
+          ref={ref}
           className={cn(
-            'font-14-regular pr-12',
+            'font-14-regular pr-12 h-[48px] md:h-14',
             // wrapper에서 border를 잡기 때문에 input 자체 border는 제거
-            'border-0 focus-visible:ring-0 focus-visible:ring-offset-0',
+            'border-0 focus-visible:ring-0 focus-visible:ring-offset-0'
           )}
           value={value}
           onChange={onChange}
@@ -72,7 +76,13 @@ export default function Input({
         ) : null}
       </div>
 
-      {errorText ? <p className="font-14-regular text-[var(--error)]">{errorText}</p> : null}
+      {errorText ? (
+        <p className="font-14-regular text-[var(--error)]">{errorText}</p>
+      ) : null}
     </div>
   );
-}
+});
+
+Input.displayName = 'Input';
+
+export default Input;
