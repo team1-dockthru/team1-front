@@ -11,36 +11,41 @@ import ToggleDown from "@/assets/icons/ic-toggle-down.svg";
 import Container from "@/components/common/Container/Container";
 
 import { cn } from "@/lib/utils";
+import NotificationModal from "@/components/common/NotificationModal/NotificationModal";
 
 const DEV_PAGES = [
   { name: "스타일 가이드", href: "/style-guide" },
-  { name: "비회원 페이지", href: "/" },
-  { name: "회원 페이지", href: "/wip" },
+  { name: "챌린지 보기", href: "/challenges-show" },
   { name: "나의 챌린지", href: "/wip" },
   { name: "챌린지 상세", href: "/wip" },
-  { name: "작업물 페이지", href: "/wip" },
+  { name: "작업물 페이지", href: "/workDetail/work_001" },
   { name: "작업 도전하기", href: "/wip" },
   { name: "관리자 페이지", href: "/wip" },
-  { name: "챌린지 보기", href: "/wip" },
   { name: "관리자 작업물", href: "/wip" },
 ];
 
 export default function Gnb({
-  isLoggedIn = false,
-  role = 'guest', // guest | member | admin
-  hasNotification = false,
+  isLoggedIn = true, // 데모를 위해 true로 변경 (또는 프롭으로 조절)
+  role = 'member', // guest | member | admin
+  hasNotification = true, // 데모를 위해 true로 변경
+  notifications = [], // 알림 목록 데이터
 }) {
   const BellIcon = hasNotification ? BellNoti : BellEmpty;
   const ProfileIcon = role === 'admin' ? ProfileAdmin : ProfileMember;
   const isAdmin = role === 'admin';
 
   const [isDevMenuOpen, setIsDevMenuOpen] = useState(false);
+  const [isNotiOpen, setIsNotiOpen] = useState(false);
   const devMenuRef = useRef(null);
+  const notiRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (devMenuRef.current && !devMenuRef.current.contains(event.target)) {
         setIsDevMenuOpen(false);
+      }
+      if (notiRef.current && !notiRef.current.contains(event.target)) {
+        setIsNotiOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -48,8 +53,8 @@ export default function Gnb({
   }, []);
 
   return (
-    <header className="flex h-[60px] items-center border-b border-[var(--gray-200)] bg-white">
-      <Container className="flex h-full items-center gap-6">
+    <header className="flex h-[60px] items-center border-b border-[var(--gray-200)] bg-white px-4 md:px-0">
+      <Container className="flex h-full w-full max-w-none items-center gap-3 md:gap-6 md:max-w-[990px]">
         {/* Left */}
         <Link href="/" className="inline-flex shrink-0 items-center gap-2">
           <Logo className={cn("h-[20.25px] w-[17.55px]", "max-[600px]:h-[13.5px] max-[600px]:w-[11.7px]")} />
@@ -71,13 +76,13 @@ export default function Gnb({
         )}
 
         {/* Right */}
-        <div className="ml-auto inline-flex items-center gap-3">
+        <div className="ml-auto inline-flex items-center gap-4">
           {/* Dev Dropdown */}
           <div className="relative" ref={devMenuRef}>
             <button
               onClick={() => setIsDevMenuOpen(!isDevMenuOpen)}
               className={cn(
-                "font-14-medium inline-flex h-8 w-28 items-center justify-between px-3 rounded-[10px] border border-[var(--gray-800)] bg-white text-[var(--gray-900)]",
+                "font-14-medium inline-flex h-8 w-24 md:w-28 items-center justify-between px-2 md:px-3 rounded-[10px] border border-[var(--gray-800)] bg-white text-[var(--gray-900)]",
                 "hover:bg-[var(--gray-50)]"
               )}
             >
@@ -115,11 +120,25 @@ export default function Gnb({
             </Link>
           ) : (
             <>
-              <Link href="/wip" className="inline-flex h-8 w-8 items-center justify-center" aria-label="알림">
-                <BellIcon className="h-6 w-6" />
-              </Link>
-              <Link href="/wip" className="inline-flex h-8 w-8 items-center justify-center" aria-label="프로필">
-                <ProfileIcon className="h-6 w-6" />
+              {/* Notifications */}
+              <div className="relative" ref={notiRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsNotiOpen(!isNotiOpen)}
+                  className="flex h-8 w-8 items-center justify-center transition-opacity hover:opacity-80"
+                  aria-label="알림"
+                >
+                  <BellIcon className="h-6 w-6" />
+                </button>
+                {isNotiOpen && (
+                  <div className="absolute right-0 top-full z-50 mt-2">
+                    <NotificationModal notifications={notifications} />
+                  </div>
+                )}
+              </div>
+
+              <Link href="/wip" className="flex h-8 w-8 items-center justify-center" aria-label="프로필">
+                <ProfileIcon className="h-8 w-8" />
               </Link>
             </>
           )}

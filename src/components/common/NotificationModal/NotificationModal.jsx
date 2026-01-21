@@ -33,7 +33,7 @@ export default function NotificationModal({
                 "border-b border-[var(--gray-100)] last:border-0 hover:bg-gray-50 transition-colors cursor-pointer"
               )}
             >
-              <p className="font-14-medium text-[var(--gray-900)] leading-normal whitespace-pre-wrap break-keep">
+              <p className="font-14-medium text-[var(--gray-900)] !leading-[18px] whitespace-pre-wrap break-keep mb-1">
                 {noti.content}
               </p>
               <span className="font-12-regular text-[var(--gray-400)]">

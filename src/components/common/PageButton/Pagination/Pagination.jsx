@@ -1,7 +1,6 @@
 "use client";
 
 import PageButton from "../PageButton";
-
 import {
   Pagination as UiPagination,
   PaginationContent,
@@ -10,6 +9,8 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import ArrowLeft from "@/assets/icons/ic-arrow-direction-active-left.svg";
+import ArrowRight from "@/assets/icons/ic-arrow-direction-active-right.svg";
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -75,8 +76,10 @@ export default function Pagination({
       <PaginationPrevious
         disabled={!canPrev}
         onClick={() => handlePage(safeCurrent - 1)}
-        className="font-14-semibold bg-[var(--gray-800)] text-[var(--gray-200)] disabled:opacity-50"
-      />
+        className="disabled:opacity-20"
+      >
+        <ArrowLeft className="w-[6px] h-[12px] text-[var(--gray-400)]" />
+      </PaginationPrevious>
 
       <PaginationContent>
         {items.map((item, idx) => {
@@ -104,8 +107,10 @@ export default function Pagination({
       <PaginationNext
         disabled={!canNext}
         onClick={() => handlePage(safeCurrent + 1)}
-        className="font-14-semibold bg-[var(--gray-800)] text-[var(--gray-200)] disabled:opacity-50"
-      />
+        className="disabled:opacity-20"
+      >
+        <ArrowRight className="w-[6px] h-[12px] text-[var(--gray-400)]" />
+      </PaginationNext>
     </UiPagination>
   );
 }
