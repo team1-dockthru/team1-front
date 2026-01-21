@@ -2,8 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import ToggleDownIcon from '@/assets/icons/ic-toggle-down.svg';
-import ToggleUpIcon from '@/assets/icons/ic-toggle-up.svg';
+import ChevronDownIcon from '@/assets/icons/ic-arrow-down-chevron.svg';
 
 /**
  * 카테고리 드롭다운 컴포넌트
@@ -59,11 +58,12 @@ export default function CategoryDropdown({
         )}
       >
         <span className={cn(!value && 'text-[var(--gray-400)]')}>{displayValue}</span>
-        {isOpen ? (
-          <ToggleUpIcon className="size-5 text-[var(--gray-900)]" />
-        ) : (
-          <ToggleDownIcon className="size-5 text-[var(--gray-900)]" />
-        )}
+        <ChevronDownIcon
+          className={cn(
+            'size-5 text-[var(--gray-900)] transition-transform',
+            isOpen && 'rotate-180'
+          )}
+        />
       </button>
 
       {/* 메뉴 리스트 */}

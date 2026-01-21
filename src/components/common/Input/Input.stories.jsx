@@ -109,7 +109,7 @@ export function Deadline_Date() {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="YY/MM/DD"
-        rightIcon={<CalendarIcon width={20} height={20} />}
+        rightIcon={<CalendarIcon width={32} height={32} />}
       />
     </div>
   );

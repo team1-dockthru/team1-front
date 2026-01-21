@@ -53,8 +53,8 @@ export default function Gnb({
   }, []);
 
   return (
-    <header className="flex h-[60px] items-center border-b border-[var(--gray-200)] bg-white">
-      <Container className="flex h-full items-center gap-6">
+    <header className="flex h-[60px] items-center border-b border-[var(--gray-200)] bg-white px-4 md:px-0">
+      <Container className="flex h-full w-full max-w-none items-center gap-3 md:gap-6 md:max-w-[990px]">
         {/* Left */}
         <Link href="/" className="inline-flex shrink-0 items-center gap-2">
           <Logo className={cn("h-[20.25px] w-[17.55px]", "max-[600px]:h-[13.5px] max-[600px]:w-[11.7px]")} />
@@ -82,7 +82,7 @@ export default function Gnb({
             <button
               onClick={() => setIsDevMenuOpen(!isDevMenuOpen)}
               className={cn(
-                "font-14-medium inline-flex h-8 w-28 items-center justify-between px-3 rounded-[10px] border border-[var(--gray-800)] bg-white text-[var(--gray-900)]",
+                "font-14-medium inline-flex h-8 w-24 md:w-28 items-center justify-between px-2 md:px-3 rounded-[10px] border border-[var(--gray-800)] bg-white text-[var(--gray-900)]",
                 "hover:bg-[var(--gray-50)]"
               )}
             >

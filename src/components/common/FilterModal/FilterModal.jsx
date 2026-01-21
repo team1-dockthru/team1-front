@@ -58,13 +58,13 @@ export default function FilterModal({
 
   return (
     <div className={cn(
-      "absolute top-[calc(100%+8px)] left-0 z-50 flex flex-col bg-white overflow-hidden transition-all",
-      "w-[343px] h-fit max-h-[541px]",
+      "absolute top-[calc(100%+8px)] left-0 z-50 flex flex-col bg-white transition-all",
+      "w-[343px]",
       "border border-[var(--gray-300)] rounded-xl shadow-[0px_4px_20px_0px_rgba(0,0,0,0.1)]"
     )}>
       {/* 헤더 */}
-      <div className="flex items-center justify-between px-4 pt-6 pb-4">
-        <h2 className="font-20-bold text-[var(--gray-900)]">필터</h2>
+      <div className="flex items-center justify-between px-4 pt-4 pb-4">
+        <h2 className="font-16-bold text-[var(--gray-900)]">필터</h2>
         <button 
           type="button" 
           onClick={(e) => {
@@ -78,11 +78,11 @@ export default function FilterModal({
       </div>
 
       {/* 바디 (스크롤 가능 영역) */}
-      <div className="flex-1 overflow-y-scroll px-4 pb-6 scrollbar-hide">
+      <div className="flex-1 px-4 pb-6">
         {/* 섹션 1: 분야 */}
         <div className="mb-6">
           <h3 className="mb-3 font-16-bold text-[var(--gray-900)]">분야</h3>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             {['Next.js', 'Modern JS', 'API', 'Web', 'Career'].map((label) => (
               <Checkbox
                 key={label}
@@ -94,12 +94,12 @@ export default function FilterModal({
           </div>
         </div>
 
-        <div className="h-[1px] w-full bg-[var(--gray-200)] mb-6" />
+        <div className="h-[1px] w-[calc(100%+32px)] -ml-4 bg-[var(--gray-200)] mb-6" />
 
         {/* 섹션 2: 문서 타입 */}
-        <div className="mb-6">
+        <div className="mb-4">
           <h3 className="mb-3 font-16-bold text-[var(--gray-900)]">문서 타입</h3>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             {['공식문서', '블로그'].map((label) => (
               <Radio
                 key={label}
@@ -113,12 +113,12 @@ export default function FilterModal({
           </div>
         </div>
 
-        <div className="h-[1px] w-full bg-[var(--gray-200)] mb-6" />
+        <div className="h-[1px] w-[calc(100%+32px)] -ml-4 bg-[var(--gray-200)] mb-6" />
 
         {/* 섹션 3: 상태 */}
-        <div className="mb-6">
+        <div className="mb-4">
           <h3 className="mb-3 font-16-bold text-[var(--gray-900)]">상태</h3>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             {['진행중', '마감'].map((label) => (
               <Radio
                 key={label}
@@ -134,7 +134,7 @@ export default function FilterModal({
       </div>
 
       {/* 푸터 */}
-      <div className="flex items-center justify-between px-4 pb-4 pt-3 border-t border-[var(--gray-100)] mt-auto bg-white">
+      <div className="mt-auto flex items-center gap-2 bg-white px-4 pb-4 pt-2">
         <button
           type="button"
           onClick={handleReset}

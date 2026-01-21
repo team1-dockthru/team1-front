@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import Container from '@/components/common/Container/Container';
 import Gnb from '@/components/common/GNB/Gnb';
@@ -85,6 +85,7 @@ const MOCK_NOTIFICATIONS = [
 export default function ChallengeListPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [appliedFilters, setAppliedFilters] = useState({
     fields: [],
     docType: '',
@@ -101,6 +102,40 @@ export default function ChallengeListPage() {
     setIsFilterOpen(false);
   };
 
+  const filteredChallenges = useMemo(() => {
+    const docTypeMap = {
+      공식문서: 'category-doc',
+      블로그: 'category-blog',
+    };
+
+    return MOCK_CHALLENGES.filter((challenge) => {
+      const hasFieldFilter = appliedFilters.fields.length > 0;
+      const hasDocTypeFilter = Boolean(appliedFilters.docType);
+      const hasStatusFilter = Boolean(appliedFilters.status);
+      const normalizedQuery = searchQuery.trim().toLowerCase();
+
+      const matchesField = hasFieldFilter
+        ? challenge.tags.some((tag) => appliedFilters.fields.includes(tag.text))
+        : true;
+
+      const matchesDocType = hasDocTypeFilter
+        ? challenge.tags.some((tag) => tag.variant === docTypeMap[appliedFilters.docType])
+        : true;
+
+      const matchesStatus = hasStatusFilter
+        ? appliedFilters.status === '마감'
+          ? Boolean(challenge.isClosed)
+          : !challenge.isClosed
+        : true;
+
+      const matchesSearch = normalizedQuery
+        ? challenge.title.toLowerCase().includes(normalizedQuery)
+        : true;
+
+      return matchesField && matchesDocType && matchesStatus && matchesSearch;
+    });
+  }, [appliedFilters, searchQuery]);
+
   return (
     <div className="min-h-screen bg-[var(--gray-50)]">
       <Gnb notifications={MOCK_NOTIFICATIONS} />
@@ -110,7 +145,7 @@ export default function ChallengeListPage() {
           <div className="flex items-center justify-between">
             <h1 className="font-24-bold text-[var(--gray-900)]">챌린지 목록</h1>
             <Link
-              href="/challenges-show"
+              href="/challenges-new"
               className="inline-flex h-10 items-center gap-1 rounded-full bg-[var(--gray-900)] px-4 py-2 font-14-semibold text-white hover:bg-[var(--gray-800)]"
             >
               <span className="leading-none">신규 챌린지 신청</span>
@@ -118,47 +153,73 @@ export default function ChallengeListPage() {
             </Link>
           </div>
 
-          <div className="flex flex-row items-center gap-2 md:gap-4">
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className={`inline-flex h-10 w-[84px] md:w-[112px] shrink-0 items-center justify-center gap-1 md:gap-2 rounded-[32px] border transition-colors ${
-                  filterCount > 0 
-                    ? 'bg-[var(--gray-900)] border-[var(--gray-900)] text-white' 
-                    : 'bg-white border-[var(--gray-300)] text-[var(--gray-900)]'
-                } font-14-medium`}
-              >
-                <span className="leading-none">필터{filterCount > 0 ? `(${filterCount})` : ''}</span>
-                {filterCount > 0 ? (
-                  <FilterActiveIcon className="size-4 md:size-5 shrink-0 text-white" />
-                ) : (
-                  <FilterInactiveIcon className="size-4 md:size-5 shrink-0 text-[var(--gray-500)]" />
-                )}
-              </button>
+          {filteredChallenges.length > 0 ? (
+            <div className="flex flex-row items-center gap-2 md:gap-4">
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsFilterOpen(!isFilterOpen)}
+                  className={`inline-flex h-10 w-[84px] md:w-[112px] shrink-0 items-center justify-center gap-1 md:gap-2 rounded-[32px] border transition-colors ${
+                    filterCount > 0 
+                      ? 'bg-[var(--gray-900)] border-[var(--gray-900)] text-white' 
+                      : 'bg-white border-[var(--gray-300)] text-[var(--gray-900)]'
+                  } font-14-medium`}
+                >
+                  <span className="leading-none">필터{filterCount > 0 ? `(${filterCount})` : ''}</span>
+                  {filterCount > 0 ? (
+                    <FilterActiveIcon className="size-4 md:size-5 shrink-0 text-white" />
+                  ) : (
+                    <FilterInactiveIcon className="size-4 md:size-5 shrink-0 text-[var(--gray-500)]" />
+                  )}
+                </button>
 
-              <FilterModal
-                isOpen={isFilterOpen}
-                onClose={() => setIsFilterOpen(false)}
-                onApply={handleFilterApply}
-                initialFilters={appliedFilters}
+                <FilterModal
+                  isOpen={isFilterOpen}
+                  onClose={() => setIsFilterOpen(false)}
+                  onApply={handleFilterApply}
+                  initialFilters={appliedFilters}
+                />
+              </div>
+
+              <Search
+                placeholder="챌린지 이름을 검색해보세요"
+                className="w-[237px] md:w-full md:max-w-[800px]"
+                onSearch={setSearchQuery}
               />
             </div>
-
-            <Search
-              placeholder="챌린지 이름을 검색해보세요"
-              className="w-[237px] md:w-full md:max-w-[800px]"
-              onSearch={(query) => console.log('Search:', query)}
-            />
-          </div>
+          ) : (
+            <div className="flex items-center justify-end gap-2 md:gap-4">
+              <Search
+                placeholder="챌린지 이름을 검색해보세요"
+                className="w-[237px] md:w-full md:max-w-[800px]"
+                onSearch={setSearchQuery}
+              />
+              <Link
+                href="/challenges-new"
+                className="inline-flex h-10 items-center gap-1 rounded-full bg-[var(--gray-900)] px-4 py-2 font-14-semibold text-white hover:bg-[var(--gray-800)]"
+              >
+                <span className="leading-none">신규 챌린지 신청</span>
+                <PlusIcon className="size-4 shrink-0" />
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Challenge List - Vertical Stack */}
-        <div className="flex flex-col gap-6">
-          {MOCK_CHALLENGES.map((challenge) => (
-            <ChallengeCard key={challenge.id} {...challenge} />
-          ))}
-        </div>
+        {filteredChallenges.length > 0 ? (
+          <div className="flex flex-col gap-6">
+            {filteredChallenges.map((challenge) => (
+              <ChallengeCard key={challenge.id} {...challenge} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex min-h-[420px] items-center justify-center text-center">
+            <div className="flex flex-col gap-2 text-[var(--gray-600)]">
+              <p className="font-16-semibold text-[var(--gray-800)]">아직 챌린지가 없어요,</p>
+              <p className="font-14-regular">지금 바로 챌린지를 신청해보세요!</p>
+            </div>
+          </div>
+        )}
 
         {/* Pagination Section */}
         <div className="mt-10 md:mt-[60px] flex justify-center">
