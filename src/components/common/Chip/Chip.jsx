@@ -10,7 +10,7 @@ export default function Chip({
   ...props
 }) {
   return (
-    <Badge variant={variant} className={["font-13-semibold", className].filter(Boolean).join(" ")} {...props}>
+    <Badge variant={variant} className={className} {...props}>
       {children}
     </Badge>
   );

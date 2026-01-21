@@ -232,6 +232,17 @@ body {
   line-height: 1.3;
 }
 
+.font-chip {
+  color: var(--gray-600);
+  font-family: var(--font-quantico), sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: normal;
+  font-feature-settings: 'liga' off, 'clig' off;
+  text-align: justify;
+}
+
 /* ===== 13pt ===== */
 .font-13-bold {
   font-size: 13px;

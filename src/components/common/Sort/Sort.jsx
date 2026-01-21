@@ -24,6 +24,7 @@ export default function Sort({
   placeholder = '정렬',
   active = false,
   className,
+  buttonClassName,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
@@ -81,6 +82,8 @@ export default function Sort({
           isBlackTheme
             ? 'border-[var(--brand-black)] bg-[var(--brand-black)] text-white shadow-md'
             : 'border-[var(--gray-200)] bg-white text-[var(--gray-500)] hover:border-[var(--gray-300)]'
+          ,
+          buttonClassName
         )}
       >
         <span className="truncate">{displayValue}</span>
