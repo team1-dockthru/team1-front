@@ -23,6 +23,7 @@ const buttonVariants = cva(
           "bg-white text-[var(--gray-900)] border-[var(--gray-300)] hover:bg-[var(--gray-50)]",
         icon:
           "size-10 rounded-full bg-white text-[var(--gray-900)] border-[var(--gray-300)] hover:bg-[var(--gray-50)] p-0",
+        ghost: "bg-transparent hover:bg-[var(--gray-50)] border-transparent",
       },
       size: {
         sm: "h-8 px-3.5",
@@ -80,7 +81,7 @@ const Button = React.forwardRef(
         {...props}
       >
         {leftIcon ? <span className="inline-flex">{leftIcon}</span> : null}
-        {children ? <span>{children}</span> : null}
+        {children}
         {rightIcon ? <span className="inline-flex">{rightIcon}</span> : null}
       </button>
     );

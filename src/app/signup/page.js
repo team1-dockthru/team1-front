@@ -4,40 +4,49 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import GoogleIcon from "@/assets/icons/ic-google.svg";
 import Logo from "@/assets/icons/ic-logo.svg";
 import Input from "@/components/common/Input/Input";
 import Button from "@/components/common/Button/Button";
 import Container from "@/components/common/Container/Container";
 
-const loginSchema = z.object({
-  email: z
-    .string()
-    .min(1, "이메일을 입력해주세요")
-    .email("올바른 이메일 양식이 아닙니다"),
-  password: z
-    .string()
-    .min(8, "비밀번호는 최소 8자 이상이어야 합니다")
-    .max(20, "비밀번호는 최대 20자 이하이어야 합니다")
-    .regex(
-      /[!@#$%^&*(),.?":{}|<>]/,
-      "특수문자를 최소 1개 이상 포함해야 합니다"
-    ),
-});
+const signupSchema = z
+  .object({
+    email: z
+      .string()
+      .min(1, "이메일을 입력해주세요")
+      .email("올바른 이메일 양식이 아닙니다"),
+    nickname: z
+      .string()
+      .min(2, "닉네임은 최소 2자 이상이어야 합니다")
+      .max(12, "닉네임은 최대 12자 이하이어야 합니다"),
+    password: z
+      .string()
+      .min(8, "비밀번호는 최소 8자 이상이어야 합니다")
+      .max(20, "비밀번호는 최대 20자 이하이어야 합니다")
+      .regex(
+        /[!@#$%^&*(),.?":{}|<>]/,
+        "특수문자를 최소 1개 이상 포함해야 합니다"
+      ),
+    passwordConfirm: z.string().min(1, "비밀번호 확인을 입력해주세요"),
+  })
+  .refine((data) => data.password === data.passwordConfirm, {
+    message: "비밀번호가 일치하지 않습니다",
+    path: ["passwordConfirm"],
+  });
 
-export default function LoginPage() {
+export default function SignupPage() {
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(signupSchema),
     mode: "onBlur",
   });
 
   const onSubmit = (data) => {
-    console.log("Login data:", data);
-    // TODO: 로그인 API 연동
+    console.log("Signup data:", data);
+    // TODO: 회원가입 API 연동
   };
 
   return (
@@ -52,7 +61,7 @@ export default function LoginPage() {
             </span>
           </Link>
 
-          {/* Login Form */}
+          {/* Signup Form */}
           <form className="flex w-full flex-col gap-6" onSubmit={handleSubmit(onSubmit)}>
             <Input
               label="이메일"
@@ -61,34 +70,38 @@ export default function LoginPage() {
               {...register("email")}
             />
             <Input
+              label="닉네임"
+              placeholder="닉네임을 입력해주세요"
+              errorText={errors.nickname?.message}
+              maxLength={12}
+              {...register("nickname")}
+            />
+            <Input
               label="비밀번호"
               type="password"
               placeholder="비밀번호를 입력해주세요"
               errorText={errors.password?.message}
               {...register("password")}
             />
+            <Input
+              label="비밀번호 확인"
+              type="password"
+              placeholder="비밀번호를 한번 더 입력해 주세요"
+              errorText={errors.passwordConfirm?.message}
+              {...register("passwordConfirm")}
+            />
             <div>
               <Button fullWidth size="lg" type="submit">
-                로그인
-              </Button>
-              {/* Google Login Button */}
-              <Button
-                variant="outline"
-                fullWidth
-                leftIcon={<GoogleIcon className="h-6 w-6" />}
-                className="mt-6 border-gray-200"
-                type="button"
-              >
-                Google로 시작하기
+                회원가입
               </Button>
             </div>
           </form>
 
-          {/* Signup Link */}
+          {/* Login Link */}
           <div className="mt-6 flex items-center justify-center gap-2 text-sm text-[var(--gray-600)]">
-            <span>회원이 아니신가요?</span>
-            <Link href="/signup" className="font-medium underline hover:text-[var(--gray-900)]">
-              회원가입하기
+            <span>회원이신가요?</span>
+            <Link href="/login" className="font-medium underline hover:text-[var(--gray-900)]">
+              로그인하기
             </Link>
           </div>
         </main>
