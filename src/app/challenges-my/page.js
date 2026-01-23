@@ -149,7 +149,7 @@ const MOCK_COMPLETED_LIST = [
     capacity: 5,
     appliedAt: "24/01/16",
     deadline: "24/02/22",
-    status: "신청 승인",
+    status: "챌린지 삭제",
   },
 ];
 
@@ -157,6 +157,7 @@ const STATUS_CLASS_NAME = {
   "승인 대기": "bg-[#fffde7] text-[#f0b400]",
   "신청 거절": "bg-[#fff0f0] text-[var(--error)]",
   "신청 승인": "bg-[#dff0ff] text-[#2f80ed]",
+  "챌린지 삭제": "bg-[#f3f4f6] text-[var(--gray-600)]",
 };
 
 export default function MyChallengesPage() {
@@ -198,6 +199,14 @@ export default function MyChallengesPage() {
   const handleAppliedRowClick = (status) => {
     if (status === "신청 거절") {
       router.push("/challenges-reject");
+      return;
+    }
+    if (status === "승인 대기") {
+      router.push("/challenges-pending");
+      return;
+    }
+    if (status === "챌린지 삭제") {
+      router.push("/challenges-delete");
     }
   };
 
@@ -233,7 +242,7 @@ export default function MyChallengesPage() {
           {activeTab !== "applied" ? (
             <Search
               placeholder="챌린지 이름을 검색해보세요"
-              className="w-[237px] md:w-full md:max-w-[800px]"
+              className="w-full md:max-w-[800px]"
               onSearch={setSearchQuery}
             />
           ) : null}
@@ -241,10 +250,10 @@ export default function MyChallengesPage() {
 
         {activeTab === "applied" ? (
           <div className="flex flex-col gap-5 md:gap-2">
-            <div className="flex w-full flex-col gap-3 md:flex-row md:items-center md:gap-3">
+            <div className="flex w-full flex-row items-center gap-3">
               <Search
                 placeholder="챌린지 이름을 검색해보세요"
-                className="w-full md:flex-1 md:min-w-0"
+                className="w-full flex-1 min-w-0 md:max-w-none"
                 onSearch={setSearchQuery}
               />
               <Sort
@@ -252,7 +261,7 @@ export default function MyChallengesPage() {
                 value={applyStatus}
                 onChange={setApplyStatus}
                 placeholder="승인 대기"
-                className="md:min-w-0"
+                className="shrink-0 md:ml-auto md:min-w-0"
                 buttonClassName="px-3"
               />
             </div>
