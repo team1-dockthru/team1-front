@@ -4,8 +4,8 @@
 import { challengeDetailMockData } from '@/mocks/challengeDetailData';
 
 // 테스트할 Mock 데이터 타입 선택
-// 'liveChallenge' | 'workingChallenge' | 'closedSingleTop' | 'closedMultipleTop' | 'recruitClosed' | 'fewParticipants' | 'noParticipants'
-const MOCK_DATA_TYPE = 'liveChallenge';
+// liveChallenge, workingChallenge, closedSingleTop, closedMultipleTop, recruitClosed, fewParticipants, noParticipants
+const MOCK_DATA_TYPE = 'recruitClosed';
 
 /**
  * 챌린지 상세 조회

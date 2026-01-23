@@ -122,49 +122,66 @@ export default function ChallengeDetailPage({ params }) {
         <div className="mx-auto w-full px-4 pt-10 md:w-[696px] md:px-6 lg:w-[890px] lg:px-0">
           
           {/* 상단 배너 (마감됨/모집마감 시에만) */}
-          <StatusBanner status={challengeData.status} />
-
-          {/* 제목 + 수정/삭제 */}
-          <ChallengeHeader
-            title={challengeData.title}
-            isMine={challengeData.isMine}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
+          <StatusBanner 
+            status={challengeData.status} 
+            deadline={challengeData.deadline}
+            participantCount={challengeData.participants?.length || 0}
+            maxParticipants={challengeData.maxParticipants || 15}
           />
 
-          {/* 태그 + 소개글 + 작성자 */}
-          <ChallengeInfo
-            type={challengeData.type}
-            category={challengeData.category}
-            description={challengeData.description}
-            author={challengeData.author}
-          />
-
-          {/* 레이아웃: 좌측(넓음) + 우측(고정) */}
-          <div className="flex flex-col gap-6 lg:flex-row">
-            {/* 좌측: 최다 추천작 + 참여 현황 */}
+          {/* 메인 레이아웃: 좌측(제목+태그+소개글+작성자) + 우측(ActionCard) */}
+          <div className="mb-6 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            {/* 좌측: 제목 + 태그 + 소개글 + 작성자 */}
             <div className="flex-1">
-              {/* 최다 추천작 (마감된 챌린지이고 추천작이 있을 때만) */}
-              {challengeData.status === 'closed' && challengeData.topTranslations.length > 0 && (
-                <TopTranslation translations={challengeData.topTranslations} />
-              )}
-
-              {/* 참여 현황 */}
-              <ParticipationStatus participants={challengeData.participants} />
+              <ChallengeHeader
+                title={challengeData.title}
+                isMine={challengeData.isMine}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+              
+              <ChallengeInfo
+                type={challengeData.type}
+                category={challengeData.category}
+                description={challengeData.description}
+                author={challengeData.author}
+              />
             </div>
 
-            {/* 우측: 사이드바 (고정) */}
-            <div className="lg:w-[280px]">
+            {/* 우측: ActionCard (데스크탑에서만 표시) */}
+            <div className="hidden lg:block lg:w-[340px]">
               <ChallengeSidebar
                 deadline={challengeData.deadline}
-                participantCount={challengeData.participantCount}
+                participantCount={challengeData.participants?.length || 0}
                 originalWorkId={challengeData.originalWorkId}
                 isParticipating={challengeData.isParticipating}
                 status={challengeData.status}
                 onJoinChallenge={handleJoinChallenge}
+                maxParticipants={challengeData.maxParticipants || 15}
               />
             </div>
           </div>
+
+          {/* 모바일/태블릿: ActionCard */}
+          <div className="mb-6 lg:hidden">
+            <ChallengeSidebar
+              deadline={challengeData.deadline}
+              participantCount={challengeData.participants?.length || 0}
+              originalWorkId={challengeData.originalWorkId}
+              isParticipating={challengeData.isParticipating}
+              status={challengeData.status}
+              onJoinChallenge={handleJoinChallenge}
+              maxParticipants={challengeData.maxParticipants || 15}
+            />
+          </div>
+
+          {/* 최다 추천작 */}
+          {challengeData.status === 'closed' && challengeData.topTranslations.length > 0 && (
+            <TopTranslation translations={challengeData.topTranslations} />
+          )}
+
+          {/* 참여 현황 */}
+          <ParticipationStatus participants={challengeData.participants} />
         </div>
       </main>
     </div>

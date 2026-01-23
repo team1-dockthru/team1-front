@@ -2,122 +2,179 @@
 
 'use client';
 
-import { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import ProfileMember from '@/assets/icons/ic-profile-member.svg';
 import HeartActive from '@/assets/icons/ic-heart-active-s.svg';
+import MedalIcon from '@/assets/icons/ic-medal.svg';
+import RightArrowIcon from '@/assets/icons/ic-btn-right-l.svg';
+import ArrowDownIcon from '@/assets/icons/ic-arrow-round-down.svg';
+import ArrowUpIcon from '@/assets/icons/ic-arrow-round-up.svg';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+} from '@/components/ui/carousel';
 
 export default function TopTranslation({ translations }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [api, setApi] = useState(null);
+  const [current, setCurrent] = useState(0);
+  const [expandedCards, setExpandedCards] = useState({});
+
+  // Carousel API가 준비되면 이벤트 리스너 등록
+  useEffect(() => {
+    if (!api) return;
+
+    setCurrent(api.selectedScrollSnap());
+
+    api.on('select', () => {
+      setCurrent(api.selectedScrollSnap());
+    });
+  }, [api]);
 
   if (!translations || translations.length === 0) {
     return null;
   }
 
   const isMultiple = translations.length > 1;
-  const currentTranslation = translations[currentIndex];
 
-  // 이전 추천작으로 이동
-  const handlePrev = () => {
-    setCurrentIndex((prev) => (prev === 0 ? translations.length - 1 : prev - 1));
+  // 카드별 더보기/접기 토글
+  const toggleExpanded = (index) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
   };
 
-  // 다음 추천작으로 이동
-  const handleNext = () => {
-    setCurrentIndex((prev) => (prev === translations.length - 1 ? 0 : prev + 1));
-  };
+  // 단일 카드 렌더링 함수
+  const renderCard = (translation, cardIndex, isCurrentCard = true) => {
+    const isExpanded = expandedCards[cardIndex] || false;
+    
+    // 텍스트가 7줄을 초과하는지 확인 (대략 350자 이상이면 7줄 초과)
+    const needsExpand = translation.content && translation.content.length > 350;
+    
+    return (
+      <div className={`relative rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-6 ${
+        isExpanded ? 'min-h-[324px]' : 'h-[324px]'
+      }`}>
+      {/* 최다 추천 번역 배지 */}
+      {isCurrentCard && (
+        <div className="absolute left-0 top-0 flex h-[34px] items-center gap-1.5 whitespace-nowrap rounded-tl-2xl rounded-br-2xl bg-[#262626] px-4 py-2">
+          <MedalIcon className="h-4 w-4 shrink-0" />
+          <span className="text-sm font-medium text-white">최다 추천 번역</span>
+        </div>
+      )}
 
+      {/* 작성자 정보 */}
+      <div className="mb-4 mt-6 flex items-center justify-between">
+        {/* 좌측: 프로필 + 닉네임 + 서브타이틀 + 하트 + 좋아요 수 */}
+        <div className="flex items-center gap-2">
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full">
+            <ProfileMember className="h-full w-full object-contain" />
+          </div>
+          <span className="text-sm font-medium text-[#262626]">
+            {translation.author.nickname}
+          </span>
+          <span className="text-sm font-normal text-[#737373]">
+            {translation.author.role || '일반'}
+          </span>
+          <div className="flex items-center gap-1">
+            <HeartActive />
+            <span className="text-sm font-medium text-[#262626]">
+              {translation.likeCount.toLocaleString()}
+            </span>
+          </div>
+        </div>
+
+        {/* 우측: 작성일자 */}
+        <span className="text-sm font-normal text-[#737373]">
+          {translation.createdAt}
+        </span>
+      </div>
+
+      {/* 구분선 */}
+      <div className="mb-4 h-px bg-[#e5e5e5]"></div>
+
+      {/* 내용 */}
+      <div
+        className={`whitespace-pre-wrap text-base font-normal leading-relaxed text-[#404040] ${
+          !isExpanded ? 'line-clamp-7' : ''
+        }`}
+        style={{ minHeight: isExpanded ? 'auto' : '188px' }}
+      >
+        {translation.content}
+      </div>
+
+      {/* 더보기/접기 버튼 (중앙) - 텍스트가 길 때만 표시 */}
+      {isCurrentCard && needsExpand && (
+        <div className={`flex justify-center ${isExpanded ? 'mt-3' : 'absolute bottom-6 left-0 right-0'}`}>
+          <button
+            onClick={() => toggleExpanded(cardIndex)}
+            className="flex items-center gap-1 text-sm font-semibold text-[#737373] hover:text-[#262626]"
+          >
+            <span>{isExpanded ? '접기' : '더보기'}</span>
+            {isExpanded ? (
+              <ArrowUpIcon className="h-5 w-5" />
+            ) : (
+              <ArrowDownIcon className="h-5 w-5" />
+            )}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+  // 단일 카드
+  if (!isMultiple) {
+    return <div className="mb-8">{renderCard(translations[0], 0)}</div>;
+  }
+
+  // 다중 카드 (Carousel)
   return (
     <div className="mb-8">
-      {/* 제목 */}
-      <h2 className="mb-4 text-xl font-semibold text-[#262626]">
-        최다 추천 번역
-      </h2>
-
-      {/* 추천작 카드 */}
-      <div className="relative rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-6">
-        {/* 좌우 화살표 (다수일 경우만) */}
-        {isMultiple && (
-          <>
-            {/* 왼쪽 화살표 */}
-            <button
-              onClick={handlePrev}
-              className="absolute left-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md hover:bg-gray-50"
-              aria-label="이전 추천작"
+      <Carousel
+        setApi={setApi}
+        opts={{
+          align: 'start',
+          loop: true,
+        }}
+        className="relative"
+      >
+        <CarouselContent className="-ml-4">
+          {translations.map((translation, index) => (
+            <CarouselItem 
+              key={index} 
+              className="basis-[calc(100%-120px)] pl-4"
             >
-              <ChevronLeft className="h-6 w-6 text-[#262626]" />
-            </button>
+              <div 
+                className={`h-full transition-opacity duration-300 ${
+                  index === current ? 'opacity-100' : 'opacity-40'
+                }`}
+              >
+                <div className="h-full">
+                  {renderCard(translation, index)}
+                </div>
+              </div>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
 
-            {/* 오른쪽 화살표 */}
-            <button
-              onClick={handleNext}
-              className="absolute right-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md hover:bg-gray-50"
-              aria-label="다음 추천작"
-            >
-              <ChevronRight className="h-6 w-6 text-[#262626]" />
-            </button>
-          </>
-        )}
-
-        {/* 작성자 정보 */}
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full">
-              <ProfileMember className="h-full w-full object-contain" />
-            </div>
-            <span className="text-sm font-medium text-[#262626]">
-              {currentTranslation.author.nickname}
-            </span>
-          </div>
-
-          {/* 좋아요 수 */}
-          <div className="flex items-center gap-1">
-            <HeartActive className="h-5 w-5" />
-            <span className="text-sm font-medium text-[#262626]">
-              {currentTranslation.likeCount.toLocaleString()}
-            </span>
-          </div>
-        </div>
-
-        {/* 작성일시 */}
-        <p className="mb-4 text-xs font-medium text-[#a3a3a3]">
-          {currentTranslation.createdAt}
-        </p>
-
-        {/* 내용 */}
-        <div
-          className={`whitespace-pre-wrap text-base font-normal leading-relaxed text-[#404040] ${
-            !isExpanded ? 'line-clamp-3' : ''
-          }`}
-        >
-          {currentTranslation.content}
-        </div>
-
-        {/* 더보기/접기 버튼 */}
+        {/* 커스텀 화살표 버튼 */}
         <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="mt-4 text-sm font-semibold text-[#737373] hover:text-[#262626]"
+          onClick={() => {
+            const nextButton = document.querySelector('[data-carousel-next]');
+            if (nextButton) nextButton.click();
+          }}
+          className="absolute right-[92px] top-1/2 z-20 -translate-y-1/2"
+          aria-label="다음 추천작"
         >
-          {isExpanded ? '접기 ↑' : '더보기 ↓'}
+          <RightArrowIcon className="h-12 w-12" />
         </button>
 
-        {/* 페이지 인디케이터 (다수일 경우만) */}
-        {isMultiple && (
-          <div className="mt-4 flex justify-center gap-2">
-            {translations.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentIndex(index)}
-                className={`h-2 w-2 rounded-full ${
-                  index === currentIndex ? 'bg-[#262626]' : 'bg-[#d4d4d4]'
-                }`}
-                aria-label={`${index + 1}번째 추천작`}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+        {/* Carousel 기본 버튼 숨김 */}
+        <CarouselNext className="hidden" data-carousel-next />
+      </Carousel>
     </div>
   );
 }

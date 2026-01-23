@@ -147,6 +147,7 @@ function adaptParticipant(apiParticipant) {
     nickname: apiParticipant.nickname,
     rank: apiParticipant.rank,
     likeCount: apiParticipant.like_count,
+    role: apiParticipant.role || (apiParticipant.rank === 1 ? '전문가' : '일반'), // 추가
   };
 }
 

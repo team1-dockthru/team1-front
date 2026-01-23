@@ -1,7 +1,6 @@
-// 우측 고정 영역
-// 마감일자, 참여인원, 원문보기, 작업도전하기/도전계속하기
+// 액션카드 영역
 
-import Link from 'next/link';
+import ActionCard from '@/components/common/ActionCard/ActionCard';
 
 export default function ChallengeSidebar({
   deadline,
@@ -10,46 +9,53 @@ export default function ChallengeSidebar({
   isParticipating,
   status,
   onJoinChallenge,
+  maxParticipants = 15,
 }) {
-  const isDisabled = status === 'recruitClosed';
-  const buttonText = isParticipating ? '도전 계속하기' : '작업 도전하기';
+  // "2024년 2월 28일 마감" → "2024년 2월 28일"로 변환
+  const deadlineText = deadline.replace(' 마감', '');
+  
+  // 날짜 기준 마감 여부 판단
+  const isDeadlinePassed = () => {
+    const match = deadlineText.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/);
+    if (!match) return false;
+    
+    const [_, year, month, day] = match;
+    const deadlineDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    deadlineDate.setHours(23, 59, 59, 999);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return today > deadlineDate;
+  };
+
+  // 인원 기준 마감 여부 판단
+  const isRecruitFull = participantCount >= maxParticipants;
+
+  // 버튼 비활성화 여부
+  const isDisabled = status === 'closed' || status === 'recruitClosed' || isDeadlinePassed() || isRecruitFull;
+  
+  const handlePrimaryClick = () => {
+    window.location.href = `/works/${originalWorkId}`;
+  };
+
+  const handleSecondaryClick = () => {
+    // disabled 상태에서는 아무 동작 안 함
+    if (isDisabled) {
+      return;
+    }
+    onJoinChallenge();
+  };
 
   return (
-    <div className="rounded-lg border border-[#e5e5e5] bg-white p-6">
-      {/* 마감일자 */}
-      <div className="mb-4">
-        <p className="mb-1 text-xs font-medium text-[#a3a3a3]">마감일</p>
-        <p className="text-sm font-semibold text-[#262626]">{deadline}</p>
-      </div>
-
-      {/* 참여인원 */}
-      <div className="mb-6">
-        <p className="mb-1 text-xs font-medium text-[#a3a3a3]">참여인원</p>
-        <p className="text-sm font-semibold text-[#262626]">
-          {participantCount}명
-        </p>
-      </div>
-
-      {/* 원문보기 버튼 */}
-      <Link
-        href={`/works/${originalWorkId}`}
-        className="mb-2 flex h-10 w-full items-center justify-center rounded-lg border border-[#262626] bg-white text-sm font-semibold text-[#262626] hover:bg-[#f5f5f5]"
-      >
-        원문 보기
-      </Link>
-
-      {/* 작업 도전하기 / 도전 계속하기 버튼 */}
-      <button
-        onClick={onJoinChallenge}
-        disabled={isDisabled}
-        className={`flex h-10 w-full items-center justify-center rounded-lg text-sm font-semibold ${
-          isDisabled
-            ? 'cursor-not-allowed bg-[#d4d4d4] text-[#a3a3a3]'
-            : 'bg-[#262626] text-white hover:bg-[#404040]'
-        }`}
-      >
-        {buttonText}
-      </button>
-    </div>
+    <ActionCard
+      deadline={deadlineText}
+      currentParticipants={participantCount}
+      maxParticipants={maxParticipants}
+      onPrimaryClick={handlePrimaryClick}
+      onSecondaryClick={handleSecondaryClick}
+      // TODO: ActionCard에 secondaryButtonText prop 추가 필요
+      // secondaryButtonText={isParticipating ? '도전 계속하기' : '작업 도전하기'}
+    />
   );
 }

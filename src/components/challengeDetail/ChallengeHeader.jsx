@@ -4,7 +4,7 @@ import WorkActions from '@/components/workDetail/WorkActions';
 
 export default function ChallengeHeader({ title, isMine, onEdit, onDelete }) {
   return (
-    <div className="mb-6 flex items-start justify-between">
+    <div className="mb-4 flex items-start justify-between">
       {/* 제목 */}
       <h1 className="flex-1 text-2xl font-semibold leading-[29px] text-[#262626]">
         {title}
