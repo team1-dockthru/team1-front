@@ -15,11 +15,14 @@ export default function FeedbackList({ feedbacks }) {
           className="rounded-lg bg-[#fafafa] p-4"
         >
           <div className="mb-2 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ProfileMember />
+            <div className="flex items-center gap-2 flex-nowrap">
+              {/* 프로필 이미지 - 크기 고정 */}
+              <div className="flex h-6 w-6 min-h-6 min-w-6 shrink-0 items-center justify-center overflow-hidden rounded-full">
+                <ProfileMember className="h-full w-full object-contain" />
+              </div>
 
-              {/* 유저명 */}
-              <span className="text-sm font-medium text-[#262626]">
+              {/* 유저명 - 줄바꿈 방지 */}
+              <span className="shrink-0 whitespace-nowrap text-sm font-medium text-[#262626]">
                 {feedback.author.nickname}
               </span>
             </div>
