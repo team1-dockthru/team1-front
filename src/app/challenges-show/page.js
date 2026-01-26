@@ -1,12 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import Container from '@/components/common/Container/Container';
 import Gnb from '@/components/common/GNB/Gnb';
-import PlusIcon from '@/assets/icons/ic-plus-s.svg';
-import FilterActiveIcon from '@/assets/icons/ic-filter-active.svg';
-import FilterInactiveIcon from '@/assets/icons/ic-filter-inactive.svg';
 import ChallengeCard from '@/components/challenge/ChallengeCard';
 import Pagination from '@/components/common/PageButton/Pagination/Pagination';
 import Sort from '@/components/common/Sort/Sort';
@@ -25,6 +22,11 @@ export default function ChallengeListPage() {
     docType: '',
     status: '',
   });
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const MOCK_CHALLENGES = useMemo(() => {
     try {
@@ -51,6 +53,14 @@ export default function ChallengeListPage() {
     setAppliedFilters(filters);
     setIsFilterOpen(false);
   };
+
+  if (!mounted) {
+    return null;
+  }
+
+  const PlusIcon = require('@/assets/icons/ic-plus-s.svg').default;
+  const FilterActiveIcon = require('@/assets/icons/ic-filter-active.svg').default;
+  const FilterInactiveIcon = require('@/assets/icons/ic-filter-inactive.svg').default;
 
   const filteredChallenges = useMemo(() => {
     const docTypeMap = {

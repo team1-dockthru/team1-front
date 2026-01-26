@@ -1,10 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import Logo from "@/assets/icons/ic-logo.svg";
 import Input from "@/components/common/Input/Input";
 import Button from "@/components/common/Button/Button";
 import Container from "@/components/common/Container/Container";
@@ -35,6 +35,12 @@ const signupSchema = z
   });
 
 export default function SignupPage() {
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const {
     register,
     handleSubmit,
@@ -48,6 +54,12 @@ export default function SignupPage() {
     console.log("Signup data:", data);
     // TODO: 회원가입 API 연동
   };
+
+  if (!mounted) {
+    return null;
+  }
+
+  const Logo = require("@/assets/icons/ic-logo.svg").default;
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--gray-50)] max-md:pt-[84.5px] md:justify-center">

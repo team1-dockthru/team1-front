@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Gnb from "@/components/common/GNB/Gnb";
 import { cn } from "@/lib/utils";
 import Button from "@/components/common/Button/Button";
@@ -48,7 +48,16 @@ const TYPOGRAPHY = [
 ];
 
 export default function StyleGuidePage() {
+  const [mounted, setMounted] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-[var(--gray-50)]">

@@ -1,13 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Container from "@/components/common/Container/Container";
 import Gnb from "@/components/common/GNB/Gnb";
 import Input from "@/components/common/Input/Input";
 import CategoryDropdown from "@/components/common/CategoryDropdown/CategoryDropdown";
 import TextBox from "@/components/common/TextBox/TextBox";
 import Button from "@/components/common/Button/Button";
-import CalendarIcon from "@/assets/icons/ic-deadline-date.svg";
 import challengesNewData from "@/data/challenges-new.json";
 import notificationsData from "@/data/notifications.json";
 import { notificationsSchema } from "@/schemas/challengeSchemas";
@@ -19,6 +18,12 @@ const FIELD_OPTIONS = challengesNewData.fieldOptions;
 const DOC_TYPE_OPTIONS = challengesNewData.docTypeOptions;
 
 export default function ChallengeApplyPage() {
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const validatedNotifications = useMemo(() => {
     try {
       return notificationsSchema.parse(notificationsData);
@@ -26,6 +31,12 @@ export default function ChallengeApplyPage() {
       return notificationsData;
     }
   }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
+  const CalendarIcon = require("@/assets/icons/ic-deadline-date.svg").default;
   const {
     register,
     handleSubmit,
@@ -97,7 +108,7 @@ export default function ChallengeApplyPage() {
               placeholder="YY/MM/DD"
               value={formData.deadline || ""}
               onChange={(e) => setValue("deadline", e.target.value)}
-              rightIcon={<CalendarIcon width={32} height={32} />}
+              rightIcon={<CalendarIcon className="size-8" />}
               errorText={errors.deadline?.message}
             />
 

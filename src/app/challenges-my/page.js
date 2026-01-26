@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Container from "@/components/common/Container/Container";
 import Gnb from "@/components/common/GNB/Gnb";
@@ -9,7 +9,6 @@ import Search from "@/components/common/Search/Search";
 import Sort from "@/components/common/Sort/Sort";
 import ChallengeCard from "@/components/challenge/ChallengeCard";
 import Pagination from "@/components/common/PageButton/Pagination/Pagination";
-import PlusIcon from "@/assets/icons/ic-plus-s.svg";
 import challengesMyData from "@/data/challenges-my.json";
 import notificationsData from "@/data/notifications.json";
 import { challengesMySchema, notificationsSchema } from "@/schemas/challengeSchemas";
@@ -36,6 +35,17 @@ export default function MyChallengesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [applyStatus, setApplyStatus] = useState("");
   const [appliedPage, setAppliedPage] = useState(1);
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
+  const PlusIcon = require("@/assets/icons/ic-plus-s.svg").default;
 
   const MOCK_MY_CHALLENGES = useMemo(() => {
     return [
