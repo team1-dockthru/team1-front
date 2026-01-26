@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Container from "@/components/common/Container/Container";
 import Gnb from "@/components/common/GNB/Gnb";
 import Input from "@/components/common/Input/Input";
@@ -14,11 +15,17 @@ import { challengeNewFormSchema } from "@/schemas/challengeSchemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
-const validatedNotifications = notificationsSchema.parse(notificationsData);
 const FIELD_OPTIONS = challengesNewData.fieldOptions;
 const DOC_TYPE_OPTIONS = challengesNewData.docTypeOptions;
 
 export default function ChallengeApplyPage() {
+  const validatedNotifications = useMemo(() => {
+    try {
+      return notificationsSchema.parse(notificationsData);
+    } catch {
+      return notificationsData;
+    }
+  }, []);
   const {
     register,
     handleSubmit,

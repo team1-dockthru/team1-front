@@ -23,13 +23,6 @@ const TAB_ITEMS = [
   { key: "applied", label: "신청한 챌린지" },
 ];
 
-const MOCK_MY_CHALLENGES = [
-  ...validatedChallengesMy.participating,
-  ...validatedChallengesMy.completed,
-];
-
-const MOCK_COMPLETED_LIST = validatedChallengesMy.applied;
-
 const STATUS_CLASS_NAME = {
   "승인 대기": "bg-[#fffde7] text-[#f0b400]",
   "신청 거절": "bg-[#fff0f0] text-[var(--error)]",
@@ -44,6 +37,17 @@ export default function MyChallengesPage() {
   const [applyStatus, setApplyStatus] = useState("");
   const [appliedPage, setAppliedPage] = useState(1);
 
+  const MOCK_MY_CHALLENGES = useMemo(() => {
+    return [
+      ...validatedChallengesMy.participating,
+      ...validatedChallengesMy.completed,
+    ];
+  }, [validatedChallengesMy]);
+
+  const MOCK_COMPLETED_LIST = useMemo(() => {
+    return validatedChallengesMy.applied;
+  }, [validatedChallengesMy]);
+
   const filteredChallenges = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
     return MOCK_MY_CHALLENGES.filter((challenge) => {
@@ -53,7 +57,7 @@ export default function MyChallengesPage() {
         : true;
       return matchesTab && matchesSearch;
     });
-  }, [activeTab, searchQuery]);
+  }, [activeTab, searchQuery, MOCK_MY_CHALLENGES]);
 
   const appliedRows = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -64,7 +68,7 @@ export default function MyChallengesPage() {
       const matchesStatus = applyStatus ? item.status === applyStatus : true;
       return matchesSearch && matchesStatus;
     });
-  }, [searchQuery, applyStatus]);
+  }, [searchQuery, applyStatus, MOCK_COMPLETED_LIST]);
 
   const appliedPageSize = 10;
   const appliedTotalPages = Math.max(1, Math.ceil(appliedRows.length / appliedPageSize));
