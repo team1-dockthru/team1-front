@@ -55,7 +55,7 @@ export default function ChallengeDeletePage() {
             <p className="font-16-regular-160 text-[var(--gray-700)]">
               Next.js App Router 공식 문서 중 Routing Fundamentals 내용입니다!
               라우팅에 따른 폴더와 파일이 구성되는 법칙과 컨벤션 등을 공부할 수
-              있을 것 같아요. 다들 챌린지 많이 참여해 주세요 :)
+              있을 것 같아요. 다들 챌린지 많이 참여해 주세요 :
             </p>
             <div className="flex items-center gap-4 text-[var(--gray-600)]">
               <span className="inline-flex items-center gap-2 font-14-regular">
