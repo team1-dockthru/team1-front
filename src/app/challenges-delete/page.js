@@ -11,8 +11,6 @@ import DeadlineIcon from "@/assets/icons/ic-deadline-s.svg";
 import PeopleIcon from "@/assets/icons/ic-person-s-yellow.svg";
 import ArrowClickIcon from "@/assets/icons/ic-arrow-click.svg";
 
-export const dynamic = 'force-dynamic';
-
 export default function ChallengeDeletePage() {
   const router = useRouter();
   const validatedNotifications = useMemo(() => {
