@@ -16,10 +16,6 @@ import challengesShowData from '@/data/challenges-show.json';
 import notificationsData from '@/data/notifications.json';
 import { challengesShowSchema, notificationsSchema } from '@/schemas/challengeSchemas';
 
-const validatedChallenges = challengesShowSchema.parse(challengesShowData);
-const validatedNotifications = notificationsSchema.parse(notificationsData);
-const MOCK_CHALLENGES = validatedChallenges;
-
 export default function ChallengeListPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -29,6 +25,22 @@ export default function ChallengeListPage() {
     docType: '',
     status: '',
   });
+
+  const MOCK_CHALLENGES = useMemo(() => {
+    try {
+      return challengesShowSchema.parse(challengesShowData);
+    } catch {
+      return challengesShowData;
+    }
+  }, []);
+
+  const validatedNotifications = useMemo(() => {
+    try {
+      return notificationsSchema.parse(notificationsData);
+    } catch {
+      return notificationsData;
+    }
+  }, []);
 
   const filterCount =
     appliedFilters.fields.length +

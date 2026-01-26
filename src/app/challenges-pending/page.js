@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Container from "@/components/common/Container/Container";
 import Gnb from "@/components/common/GNB/Gnb";
@@ -14,13 +14,26 @@ import notificationsData from "@/data/notifications.json";
 import challengePendingData from "@/data/challenges-pending.json";
 import { notificationsSchema, challengePendingSchema } from "@/schemas/challengeSchemas";
 
-const validatedNotifications = notificationsSchema.parse(notificationsData);
-const validatedChallengeData = challengePendingSchema.parse(challengePendingData);
-const challenge = validatedChallengeData.challenge;
-
 export default function ChallengePendingPage() {
   const router = useRouter();
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+
+  const validatedNotifications = useMemo(() => {
+    try {
+      return notificationsSchema.parse(notificationsData);
+    } catch {
+      return notificationsData;
+    }
+  }, []);
+
+  const challenge = useMemo(() => {
+    try {
+      const validatedChallengeData = challengePendingSchema.parse(challengePendingData);
+      return validatedChallengeData.challenge;
+    } catch {
+      return challengePendingData.challenge;
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-[var(--gray-50)]">

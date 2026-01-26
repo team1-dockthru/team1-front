@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import Container from '@/components/common/Container/Container';
 import Search from '@/components/common/Search/Search';
@@ -10,10 +10,6 @@ import { cn } from '@/lib/utils';
 import adminChallengeData from '@/data/admin-challenge-application.json';
 import { adminChallengesSchema } from '@/schemas/challengeSchemas';
 
-const validatedData = adminChallengesSchema.parse(adminChallengeData);
-const SORT_OPTIONS = validatedData.sortOptions;
-const MOCK_DATA = validatedData.challenges;
-  
 function getStatusText(status) {
   switch (status) {
     case 'pending':
@@ -63,7 +59,17 @@ export default function ChallengeApplicationPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortValue, setSortValue] = useState('승인 대기');
   const [currentPage, setCurrentPage] = useState(1);
-  const [challenges] = useState(MOCK_DATA);
+
+  const validatedData = useMemo(() => {
+    try {
+      return adminChallengesSchema.parse(adminChallengeData);
+    } catch {
+      return adminChallengeData;
+    }
+  }, []);
+
+  const SORT_OPTIONS = useMemo(() => validatedData.sortOptions, [validatedData]);
+  const [challenges] = useState(() => validatedData.challenges);
 
   const filteredChallenges = challenges.filter((challenge) => {
     if (sortValue === '승인 대기') {

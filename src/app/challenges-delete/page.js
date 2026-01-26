@@ -1,14 +1,21 @@
 "use client";
 
+import { useMemo } from "react";
 import Container from "@/components/common/Container/Container";
 import Gnb from "@/components/common/GNB/Gnb";
 import ChallengeStatusContent from "@/components/challenge/ChallengeStatusContent";
 import notificationsData from "@/data/notifications.json";
 import { notificationsSchema } from "@/schemas/challengeSchemas";
 
-const validatedNotifications = notificationsSchema.parse(notificationsData);
-
 export default function ChallengeDeletePage() {
+  const validatedNotifications = useMemo(() => {
+    try {
+      return notificationsSchema.parse(notificationsData);
+    } catch {
+      return notificationsData;
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-[var(--gray-50)]">
       <Gnb notifications={validatedNotifications} />
