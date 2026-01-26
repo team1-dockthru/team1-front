@@ -7,18 +7,12 @@ import Search from '@/components/common/Search/Search';
 import Sort from '@/components/common/Sort/Sort';
 import Pagination from '@/components/common/PageButton/Pagination/Pagination';
 import { cn } from '@/lib/utils';
+import adminChallengeData from '@/data/admin-challenge-application.json';
+import { adminChallengesSchema } from '@/schemas/challengeSchemas';
 
-const SORT_OPTIONS = [
-  '승인 대기',
-  '신청 승인',
-  '신청 거절',
-  '신청 시간 빠른순',
-  '신청 시간 느린순',
-  '마감 기한 빠른순',
-  '마감 기한 느린순',
-];
-
-const MOCK_DATA = [
+const validatedData = adminChallengesSchema.parse(adminChallengeData);
+const SORT_OPTIONS = validatedData.sortOptions;
+const MOCK_DATA = validatedData.challenges;
   {
     id: 1023,
     field: '공식문서',

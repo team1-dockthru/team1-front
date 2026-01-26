@@ -3,25 +3,15 @@
 import Container from "@/components/common/Container/Container";
 import Gnb from "@/components/common/GNB/Gnb";
 import ChallengeStatusContent from "@/components/challenge/ChallengeStatusContent";
+import notificationsData from "@/data/notifications.json";
+import { notificationsSchema } from "@/schemas/challengeSchemas";
 
-const MOCK_NOTIFICATIONS = [
-  {
-    id: 1,
-    content:
-      "'신청한 챌린지 이름'/'챌린지 이름'에 도전한 작업물에/'챌린지 이름'의 작업물에 작성한 피드백이 수정/삭제되었어요",
-    date: "2024.04.01",
-  },
-  {
-    id: 2,
-    content: "'신청한 챌린지 이름'이 승인/거절되었어요",
-    date: "2024.04.01",
-  },
-];
+const validatedNotifications = notificationsSchema.parse(notificationsData);
 
 export default function ChallengeRejectPage() {
   return (
     <div className="min-h-screen bg-[var(--gray-50)]">
-      <Gnb notifications={MOCK_NOTIFICATIONS} />
+      <Gnb notifications={validatedNotifications} />
       <Container className="py-10 md:py-[60px]">
         <ChallengeStatusContent
           bannerText="신청이 거절되었습니다."
