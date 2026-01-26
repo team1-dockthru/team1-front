@@ -1,11 +1,16 @@
 "use client";
 
 import { useMemo } from "react";
+import dynamic from "next/dynamic";
 import Container from "@/components/common/Container/Container";
 import Gnb from "@/components/common/GNB/Gnb";
-import ChallengeStatusContent from "@/components/challenge/ChallengeStatusContent";
 import notificationsData from "@/data/notifications.json";
 import { notificationsSchema } from "@/schemas/challengeSchemas";
+
+const ChallengeStatusContent = dynamic(
+  () => import("@/components/challenge/ChallengeStatusContent"),
+  { ssr: false }
+);
 
 export default function ChallengeRejectPage() {
   const validatedNotifications = useMemo(() => {
