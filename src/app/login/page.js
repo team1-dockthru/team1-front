@@ -1,11 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import GoogleIcon from "@/assets/icons/ic-google.svg";
-import Logo from "@/assets/icons/ic-logo.svg";
 import Input from "@/components/common/Input/Input";
 import Button from "@/components/common/Button/Button";
 import Container from "@/components/common/Container/Container";
@@ -26,6 +25,12 @@ const loginSchema = z.object({
 });
 
 export default function LoginPage() {
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const {
     register,
     handleSubmit,
@@ -39,6 +44,13 @@ export default function LoginPage() {
     console.log("Login data:", data);
     // TODO: 로그인 API 연동
   };
+
+  if (!mounted) {
+    return null;
+  }
+
+  const GoogleIcon = require("@/assets/icons/ic-google.svg").default;
+  const Logo = require("@/assets/icons/ic-logo.svg").default;
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--gray-50)] max-md:pt-[84.5px] md:justify-center">

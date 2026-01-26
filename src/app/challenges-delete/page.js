@@ -1,18 +1,24 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Container from "@/components/common/Container/Container";
 import Gnb from "@/components/common/GNB/Gnb";
+import Popup from "@/components/common/Popup/Popup";
 import notificationsData from "@/data/notifications.json";
 import { notificationsSchema } from "@/schemas/challengeSchemas";
-import RejectSampleImage from "@/assets/images/img_reject_sample_1.svg";
-import DeadlineIcon from "@/assets/icons/ic-deadline-s.svg";
-import PeopleIcon from "@/assets/icons/ic-person-s-yellow.svg";
-import ArrowClickIcon from "@/assets/icons/ic-arrow-click.svg";
+
+export const dynamic = 'force-dynamic';
 
 export default function ChallengeDeletePage() {
   const router = useRouter();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const validatedNotifications = useMemo(() => {
     try {
       return notificationsSchema.parse(notificationsData);
@@ -20,6 +26,16 @@ export default function ChallengeDeletePage() {
       return notificationsData;
     }
   }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
+  const RejectSampleImage = require("@/assets/images/img_reject_sample_1.svg").default;
+  const DeadlineIcon = require("@/assets/icons/ic-deadline-s.svg").default;
+  const PeopleIcon = require("@/assets/icons/ic-person-s-yellow.svg").default;
+  const ArrowClickIcon = require("@/assets/icons/ic-arrow-click.svg").default;
+  const CheckIcon = require("@/assets/icons/ic-check-round.svg").default;
 
   return (
     <div className="min-h-screen bg-[var(--gray-50)]">
@@ -87,6 +103,16 @@ export default function ChallengeDeletePage() {
           </div>
         </div>
       </Container>
+
+      <Popup
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={() => setIsModalOpen(false)}
+        message="확인"
+        buttonText="확인"
+        icon={CheckIcon}
+        forceMobile
+      />
     </div>
   );
 }
