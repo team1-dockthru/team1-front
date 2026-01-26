@@ -1,0 +1,56 @@
+[
+  {
+    "id": 1,
+    "title": "개발자로써 자신만의 브랜드를 구축하는 방법(dailydev)",
+    "tags": [
+      { "text": "Career", "variant": "type-career" },
+      { "text": "블로그", "variant": "category-blog" }
+    ],
+    "deadline": "2024년 2월 28일 마감",
+    "participants": "2/5 참여중"
+  },
+  {
+    "id": 2,
+    "title": "TanStack Query - Optimistic Updates",
+    "tags": [
+      { "text": "Modern JS", "variant": "type-modernjs" },
+      { "text": "공식문서", "variant": "category-doc" }
+    ],
+    "deadline": "2024년 2월 28일 마감",
+    "participants": "2/5 참여중"
+  },
+  {
+    "id": 3,
+    "title": "Web 개발자의 필수 요건",
+    "tags": [
+      { "text": "Web", "variant": "type-web" },
+      { "text": "공식문서", "variant": "category-doc" }
+    ],
+    "deadline": "2024년 2월 28일 마감",
+    "participants": "2/5 참여중"
+  },
+  {
+    "id": 4,
+    "statusText": "모집이 완료된 상태에요",
+    "title": "Next.js - App Router: Routing Fundamentals",
+    "tags": [
+      { "text": "Next.js", "variant": "type-nextjs" },
+      { "text": "공식문서", "variant": "category-doc" }
+    ],
+    "deadline": "2024년 3월 3일 마감",
+    "participants": "5/5 참여 완료"
+  },
+  {
+    "id": 5,
+    "statusText": "챌린지가 마감되었어요",
+    "isClosed": true,
+    "title": "Fetch API, 너는 에러를 제대로 핸들링 하고 있는가?(dailydev)",
+    "tags": [
+      { "text": "API", "variant": "type-api" },
+      { "text": "공식문서", "variant": "category-doc" }
+    ],
+    "deadline": "2024년 2월 28일 마감",
+    "participants": "5/5 참여 완료"
+  }
+]
+

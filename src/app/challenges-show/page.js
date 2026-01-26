@@ -12,8 +12,13 @@ import Pagination from '@/components/common/PageButton/Pagination/Pagination';
 import Sort from '@/components/common/Sort/Sort';
 import Search from '@/components/common/Search/Search';
 import FilterModal from '@/components/common/FilterModal/FilterModal';
+import challengesShowData from '@/data/challenges-show.json';
+import notificationsData from '@/data/notifications.json';
+import { challengesShowSchema, notificationsSchema } from '@/schemas/challengeSchemas';
 
-const MOCK_CHALLENGES = [
+const validatedChallenges = challengesShowSchema.parse(challengesShowData);
+const validatedNotifications = notificationsSchema.parse(notificationsData);
+const MOCK_CHALLENGES = validatedChallenges;
   {
     id: 1,
     title: '개발자로써 자신만의 브랜드를 구축하는 방법(dailydev)',
@@ -66,19 +71,6 @@ const MOCK_CHALLENGES = [
     ],
     deadline: '2024년 2월 28일 마감',
     participants: '5/5 참여 완료',
-  },
-];
-
-const MOCK_NOTIFICATIONS = [
-  {
-    id: 1,
-    content: "'신청한 챌린지 이름'/'챌린지 이름'에 도전한 작업물에/'챌린지 이름'의 작업물에 작성한 피드백이 수정/삭제되었어요",
-    date: '2024.04.01',
-  },
-  {
-    id: 2,
-    content: "'신청한 챌린지 이름'이 승인/거절되었어요",
-    date: '2024.04.01',
   },
 ];
 
@@ -138,7 +130,7 @@ export default function ChallengeListPage() {
 
   return (
     <div className="min-h-screen bg-[var(--gray-50)]">
-      <Gnb notifications={MOCK_NOTIFICATIONS} />
+      <Gnb notifications={validatedNotifications} />
       <Container className="py-10 md:py-[60px]">
         {/* Header Section */}
         <div className="mb-6 flex flex-col gap-6 md:mb-8">
