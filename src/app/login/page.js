@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -9,6 +11,8 @@ import Logo from "@/assets/icons/ic-logo.svg";
 import Input from "@/components/common/Input/Input";
 import Button from "@/components/common/Button/Button";
 import Container from "@/components/common/Container/Container";
+import { login } from "@/services/user";
+import { useAuthStore } from "@/store/authStore";
 
 const loginSchema = z.object({
   email: z
@@ -26,6 +30,10 @@ const loginSchema = z.object({
 });
 
 export default function LoginPage() {
+  const router = useRouter();
+  const setToken = useAuthStore((state) => state.setToken);
+  const [submitError, setSubmitError] = useState("");
+
   const {
     register,
     handleSubmit,
@@ -35,9 +43,18 @@ export default function LoginPage() {
     mode: "onBlur",
   });
 
-  const onSubmit = (data) => {
-    console.log("Login data:", data);
-    // TODO: 로그인 API 연동
+  const onSubmit = async (data) => {
+    setSubmitError("");
+    try {
+      const result = await login(data);
+      const token = result?.data?.token;
+      if (token) {
+        setToken(token);
+      }
+      router.push("/");
+    } catch (error) {
+      setSubmitError(error.message || "로그인에 실패했습니다.");
+    }
   };
 
   return (
@@ -67,6 +84,9 @@ export default function LoginPage() {
               errorText={errors.password?.message}
               {...register("password")}
             />
+            {submitError ? (
+              <p className="text-sm text-[var(--error)]">{submitError}</p>
+            ) : null}
             <div>
               <Button fullWidth size="lg" type="submit">
                 로그인

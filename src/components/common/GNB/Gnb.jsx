@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import BellEmpty from "@/assets/icons/ic-bell-empty.svg";
 import BellNoti from "@/assets/icons/ic-bell-noti.svg";
@@ -9,6 +10,7 @@ import ProfileAdmin from "@/assets/icons/ic-profile-admin.svg";
 import Logo from "@/assets/icons/ic-logo.svg";
 import ToggleDown from "@/assets/icons/ic-toggle-down.svg";
 import Container from "@/components/common/Container/Container";
+import UserDropdown from "@/components/common/UserDropdown/UserDropdown";
 
 import { cn } from "@/lib/utils";
 import NotificationModal from "@/components/common/NotificationModal/NotificationModal";
@@ -16,7 +18,7 @@ import NotificationModal from "@/components/common/NotificationModal/Notificatio
 const DEV_PAGES = [
   { name: "스타일 가이드", href: "/style-guide" },
   { name: "챌린지 보기", href: "/challenges-show" },
-  { name: "나의 챌린지", href: "/wip" },
+  { name: "나의 챌린지", href: "/challenges-my" },
   { name: "챌린지 상세", href: "/wip" },
   { name: "작업물 페이지", href: "/workDetail/work_001" },
   { name: "작업 도전하기", href: "/wip" },
@@ -29,10 +31,18 @@ export default function Gnb({
   role = 'member', // guest | member | admin
   hasNotification = true, // 데모를 위해 true로 변경
   notifications = [], // 알림 목록 데이터
+  useUserDropdown = false,
+  userDropdownProps,
 }) {
+  const router = useRouter();
   const BellIcon = hasNotification ? BellNoti : BellEmpty;
   const ProfileIcon = role === 'admin' ? ProfileAdmin : ProfileMember;
   const isAdmin = role === 'admin';
+  const resolvedUserDropdownProps = {
+    ...(userDropdownProps || {}),
+    onMyChallenge:
+      userDropdownProps?.onMyChallenge || (() => router.push("/challenges-my")),
+  };
 
   const [isDevMenuOpen, setIsDevMenuOpen] = useState(false);
   const [isNotiOpen, setIsNotiOpen] = useState(false);
@@ -78,7 +88,7 @@ export default function Gnb({
         {/* Right */}
         <div className="ml-auto inline-flex items-center gap-4">
           {/* Dev Dropdown */}
-          <div className="relative" ref={devMenuRef}>
+          <div className="relative hidden md:block" ref={devMenuRef}>
             <button
               onClick={() => setIsDevMenuOpen(!isDevMenuOpen)}
               className={cn(
@@ -137,9 +147,13 @@ export default function Gnb({
                 )}
               </div>
 
-              <Link href="/wip" className="flex h-8 w-8 items-center justify-center" aria-label="프로필">
-                <ProfileIcon className="h-8 w-8" />
-              </Link>
+              {useUserDropdown ? (
+                <UserDropdown {...resolvedUserDropdownProps} />
+              ) : (
+                <Link href="/wip" className="flex h-8 w-8 items-center justify-center" aria-label="프로필">
+                  <ProfileIcon className="h-8 w-8" />
+                </Link>
+              )}
             </>
           )}
         </div>

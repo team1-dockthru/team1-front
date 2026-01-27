@@ -45,10 +45,10 @@ export default function Tab({
                     isDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
                   )
                 : cn(
-                    "px-6 py-4 border-b-[3px] border-b-transparent bg-transparent",
+                    "px-3 py-3 md:px-6 md:py-4 border-b-[3px] border-b-transparent bg-transparent whitespace-nowrap",
                     isActive
-                      ? "text-[var(--gray-900)] border-b-[var(--gray-900)] text-[18px]"
-                      : "text-[var(--gray-500)] text-[16px]",
+                      ? "text-[var(--gray-900)] border-b-[var(--gray-900)] text-[16px] md:text-[18px]"
+                      : "text-[var(--gray-500)] text-[16px] md:text-[16px]",
                     isDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
                   )
             )}

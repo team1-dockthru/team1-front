@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -8,6 +10,7 @@ import Logo from "@/assets/icons/ic-logo.svg";
 import Input from "@/components/common/Input/Input";
 import Button from "@/components/common/Button/Button";
 import Container from "@/components/common/Container/Container";
+import { signup } from "@/services/user";
 
 const signupSchema = z
   .object({
@@ -35,6 +38,9 @@ const signupSchema = z
   });
 
 export default function SignupPage() {
+  const router = useRouter();
+  const [submitError, setSubmitError] = useState("");
+
   const {
     register,
     handleSubmit,
@@ -44,9 +50,15 @@ export default function SignupPage() {
     mode: "onBlur",
   });
 
-  const onSubmit = (data) => {
-    console.log("Signup data:", data);
-    // TODO: 회원가입 API 연동
+  const onSubmit = async (data) => {
+    setSubmitError("");
+    try {
+      const { email, password, nickname } = data;
+      await signup({ email, password, nickname, profileImage: "USER" });
+      router.push("/login");
+    } catch (error) {
+      setSubmitError(error.message || "회원가입에 실패했습니다.");
+    }
   };
 
   return (
@@ -90,6 +102,9 @@ export default function SignupPage() {
               errorText={errors.passwordConfirm?.message}
               {...register("passwordConfirm")}
             />
+            {submitError ? (
+              <p className="text-sm text-[var(--error)]">{submitError}</p>
+            ) : null}
             <div>
               <Button fullWidth size="lg" type="submit">
                 회원가입

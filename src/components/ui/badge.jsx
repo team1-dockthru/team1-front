@@ -6,28 +6,37 @@ import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex h-[26px] items-center justify-center whitespace-nowrap font-semibold",
+  "inline-flex h-[26px] items-center justify-center whitespace-nowrap box-border",
   {
     variants: {
       variant: {
         // type-*
-        "type-nextjs": "rounded-[8px] bg-[#79e16a] px-3 py-[3px] text-[var(--gray-900)]",
-        "type-api": "rounded-[8px] bg-[#ff905e] px-3 py-[3px] text-[var(--gray-900)]",
-        "type-career": "rounded-[8px] bg-[#7eb2ee] px-3 py-[3px] text-[var(--gray-900)]",
-        "type-modernjs": "rounded-[8px] bg-[#f66e6b] px-3 py-[3px] text-[var(--gray-900)]",
-        "type-web": "rounded-[8px] bg-[#fae444] px-3 py-[3px] text-[var(--gray-900)]",
+        "type-nextjs":
+          "min-w-[73px] rounded-[8px] bg-[#79e16a] px-3 py-[3px] font-chip text-[14px]",
+        "type-api":
+          "min-w-[73px] rounded-[8px] bg-[#ff905e] px-3 py-[3px] font-chip text-[14px]",
+        "type-career":
+          "min-w-[73px] rounded-[8px] bg-[#7eb2ee] px-3 py-[3px] font-chip text-[14px]",
+        "type-modernjs":
+          "min-w-[73px] rounded-[8px] bg-[#f66e6b] px-3 py-[3px] font-chip text-[14px]",
+        "type-web":
+          "min-w-[73px] rounded-[8px] bg-[#fae444] px-3 py-[3px] font-chip text-[14px]",
 
         // category-*
         "category-doc":
-          "rounded-[8px] border border-[var(--gray-300)] bg-white px-[7px] py-[5px] text-[var(--gray-800)]",
+          "rounded-[8px] border border-[var(--gray-300)] bg-white px-3 py-[3px] font-13-semibold text-[var(--gray-800)]",
         "category-blog":
-          "rounded-[8px] border border-[var(--gray-300)] bg-white px-[7px] py-[5px] text-[var(--gray-800)]",
+          "rounded-[8px] border border-[var(--gray-300)] bg-white px-3 py-[3px] font-13-semibold text-[var(--gray-800)]",
 
         // status-*
-        "status-pending": "rounded bg-[#fffde7] px-2 py-1 text-[#f0b400]",
-        "status-reject": "rounded bg-[#fff0f0] px-2 py-1 text-[var(--error)]",
-        "status-approve": "rounded bg-[#dff0ff] px-2 py-1 text-[#2f80ed]",
-        "status-delete": "rounded bg-[var(--gray-200)] px-2 py-1 text-[var(--gray-700)]",
+        "status-pending":
+          "rounded bg-[#fffde7] px-2 py-1 font-12-medium text-[#f0b400]",
+        "status-reject":
+          "rounded bg-[#fff0f0] px-2 py-1 font-12-medium text-[var(--error)]",
+        "status-approve":
+          "rounded bg-[#dff0ff] px-2 py-1 font-12-medium text-[#2f80ed]",
+        "status-delete":
+          "rounded bg-[var(--gray-200)] px-2 py-1 font-12-medium text-[var(--gray-700)]",
       },
     },
     defaultVariants: {
