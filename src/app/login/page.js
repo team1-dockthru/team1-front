@@ -1,8 +1,8 @@
 "use client";
 
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
 import Script from "next/script";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,10 +12,13 @@ import Logo from "@/assets/icons/ic-logo.svg";
 import Input from "@/components/common/Input/Input";
 import Button from "@/components/common/Button/Button";
 import Container from "@/components/common/Container/Container";
-import { login } from "@/services/user";
+import { googleLogin, login } from "@/services/user";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "@/hooks/use-toast";
-import { googleLogin } from "@/services/user";
+
+/** ✅ 여기 */
+const googleClientId =
+  process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
 
 const loginSchema = z.object({
   email: z
@@ -33,6 +36,7 @@ const loginSchema = z.object({
 });
 
 export default function LoginPage() {
+  console.log("LoginPage render");
   const router = useRouter();
   const setToken = useAuthStore((state) => state.setToken);
   const [submitError, setSubmitError] = useState("");
@@ -98,7 +102,12 @@ export default function LoginPage() {
     [router, setToken]
   );
 
+  console.log("INIT origin:", window.location.origin);
+  console.log("INIT client_id:", googleClientId);  
+
+
   const initGoogle = useCallback(() => {
+    console.log("googleClientId", googleClientId);
     if (!googleClientId) return;
     if (typeof window === "undefined") return;
     if (!window.google?.accounts?.id) return;
@@ -107,6 +116,7 @@ export default function LoginPage() {
       client_id: googleClientId,
       callback: handleGoogleCredential,
       ux_mode: "popup",
+      use_fedcm_for_prompt: false,
     });
     setIsGoogleReady(true);
   }, [googleClientId, handleGoogleCredential]);
@@ -116,6 +126,8 @@ export default function LoginPage() {
   }, [initGoogle]);
 
   const handleGoogleLoginClick = () => {
+    console.log("Google button clicked");
+    console.log("googleClientId (click)", googleClientId);
     if (!googleClientId) {
       toast({
         title: "설정 필요",

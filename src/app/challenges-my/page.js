@@ -10,147 +10,14 @@ import Sort from "@/components/common/Sort/Sort";
 import ChallengeCard from "@/components/challenge/ChallengeCard";
 import Pagination from "@/components/common/PageButton/Pagination/Pagination";
 import PlusIcon from "@/assets/icons/ic-plus-s.svg";
-
-const MOCK_NOTIFICATIONS = [
-  {
-    id: 1,
-    content:
-      "'신청한 챌린지 이름'/'챌린지 이름'에 도전한 작업물에/'챌린지 이름'의 작업물에 작성한 피드백이 수정/삭제되었어요",
-    date: "2024.04.01",
-  },
-  {
-    id: 2,
-    content: "'신청한 챌린지 이름'이 승인/거절되었어요",
-    date: "2024.04.01",
-  },
-];
+import challengesMyData from "@/data/challenges-my.json";
+import notificationsData from "@/data/notifications.json";
+import { challengesMySchema, notificationsSchema } from "@/schemas/challengeSchemas";
 
 const TAB_ITEMS = [
   { key: "participating", label: "참여중인 챌린지" },
   { key: "completed", label: "완료한 챌린지" },
   { key: "applied", label: "신청한 챌린지" },
-];
-
-const MOCK_MY_CHALLENGES = [
-  {
-    id: 1,
-    tab: "participating",
-    statusText: "모집이 완료된 상태에요",
-    title: "Next.js - App Router: Routing Fundamentals",
-    tags: [
-      { text: "Next.js", variant: "type-nextjs" },
-      { text: "공식문서", variant: "category-doc" },
-    ],
-    deadline: "2024년 3월 3일 마감",
-    participants: "5/5 참여 완료",
-  },
-  {
-    id: 2,
-    tab: "participating",
-    title: "개발자로써 자신만의 브랜드를 구축하는 방법(dailydev)",
-    tags: [
-      { text: "Career", variant: "type-career" },
-      { text: "블로그", variant: "category-blog" },
-    ],
-    deadline: "2024년 2월 28일 마감",
-    participants: "2/5 참여중",
-  },
-  {
-    id: 3,
-    tab: "completed",
-    statusText: "챌린지가 마감되었어요",
-    isClosed: true,
-    title: "Fetch API, 너는 에러를 제대로 핸들링 하고 있는가?(dailydev)",
-    tags: [
-      { text: "API", variant: "type-api" },
-      { text: "공식문서", variant: "category-doc" },
-    ],
-    deadline: "2024년 2월 28일 마감",
-    participants: "5/5 참여 완료",
-  },
-];
-
-const MOCK_COMPLETED_LIST = [
-  {
-    id: 1023,
-    docType: "공식문서",
-    category: "Next.js",
-    title: "Next.js - App Router: Routing Fundamentals",
-    capacity: 10,
-    appliedAt: "24/01/16",
-    deadline: "24/02/24",
-    status: "승인 대기",
-  },
-  {
-    id: 1022,
-    docType: "블로그",
-    category: "API",
-    title: "Fetch API, 너는 에러를 제대로 핸들링 하고 있는가?(dailydev)",
-    capacity: 5,
-    appliedAt: "24/01/16",
-    deadline: "24/02/23",
-    status: "승인 대기",
-  },
-  {
-    id: 1021,
-    docType: "공식문서",
-    category: "API",
-    title: "Fetch API, 너는 에러를 제대로 핸들링 하고 있는가?(dailydev)",
-    capacity: 10,
-    appliedAt: "24/01/16",
-    deadline: "24/02/22",
-    status: "승인 대기",
-  },
-  {
-    id: 1020,
-    docType: "블로그",
-    category: "Career",
-    title: "개발자로써 자신만의 브랜드를 구축하는 방법(dailydev)",
-    capacity: 5,
-    appliedAt: "24/01/16",
-    deadline: "24/02/22",
-    status: "신청 거절",
-  },
-  {
-    id: 1019,
-    docType: "공식문서",
-    category: "Next.js",
-    title: "Next.js - App Router: Routing Fundamentals",
-    capacity: 10,
-    appliedAt: "24/01/16",
-    deadline: "24/02/22",
-    status: "신청 승인",
-  },
-  {
-    id: 1018,
-    docType: "공식문서",
-    category: "API",
-    title: "Fetch API, 너는 에러를 제대로 핸들링 하고 있는가?(dailydev)",
-    capacity: 5,
-    appliedAt: "24/01/16",
-    deadline: "24/02/22",
-    status: "신청 거절",
-  },
-  {
-    id: 1017,
-    docType: "공식문서",
-    category: "API",
-    title: "Fetch API, 너는 에러를 제대로 핸들링 하고 있는가?(dailydev)",
-    capacity: 10,
-    appliedAt: "24/01/16",
-    deadline: "24/02/22",
-    status: "신청 승인",
-  },
-  {
-    id: 1016,
-    docType: "블로그",
-    category: "Career",
-    title: "개발자로써 자신만의 브랜드를 구축하는 방법(dailydev)",
-    capacity: 5,
-    appliedAt: "24/01/16",
-    deadline: "24/02/22",
-    status: "챌린지 삭제",
-  },
 ];
 
 const STATUS_CLASS_NAME = {
@@ -167,6 +34,33 @@ export default function MyChallengesPage() {
   const [applyStatus, setApplyStatus] = useState("");
   const [appliedPage, setAppliedPage] = useState(1);
 
+  const validatedChallengesMy = useMemo(() => {
+    try {
+      return challengesMySchema.parse(challengesMyData);
+    } catch {
+      return challengesMyData;
+    }
+  }, []);
+
+  const validatedNotifications = useMemo(() => {
+    try {
+      return notificationsSchema.parse(notificationsData);
+    } catch {
+      return notificationsData;
+    }
+  }, []);
+
+  const MOCK_MY_CHALLENGES = useMemo(() => {
+    return [
+      ...validatedChallengesMy.participating,
+      ...validatedChallengesMy.completed,
+    ];
+  }, [validatedChallengesMy]);
+
+  const MOCK_COMPLETED_LIST = useMemo(() => {
+    return validatedChallengesMy.applied;
+  }, [validatedChallengesMy]);
+
   const filteredChallenges = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
     return MOCK_MY_CHALLENGES.filter((challenge) => {
@@ -176,7 +70,7 @@ export default function MyChallengesPage() {
         : true;
       return matchesTab && matchesSearch;
     });
-  }, [activeTab, searchQuery]);
+  }, [activeTab, searchQuery, MOCK_MY_CHALLENGES]);
 
   const appliedRows = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -187,7 +81,7 @@ export default function MyChallengesPage() {
       const matchesStatus = applyStatus ? item.status === applyStatus : true;
       return matchesSearch && matchesStatus;
     });
-  }, [searchQuery, applyStatus]);
+  }, [searchQuery, applyStatus, MOCK_COMPLETED_LIST]);
 
   const appliedPageSize = 10;
   const appliedTotalPages = Math.max(1, Math.ceil(appliedRows.length / appliedPageSize));
@@ -212,9 +106,7 @@ export default function MyChallengesPage() {
   return (
     <div className="min-h-screen bg-[var(--gray-50)]">
       <Gnb
-        notifications={MOCK_NOTIFICATIONS}
-        isLoggedIn
-        role="member"
+        notifications={validatedNotifications}
         user={{ name: "체다치즈", role: "일반" }}
         onMyChallenge={() => router.push("/challenges-my")}
       />
@@ -280,7 +172,9 @@ export default function MyChallengesPage() {
                   <div
                     key={item.id}
                     className={`grid grid-cols-[72px_96px_88px_minmax(280px,1fr)_96px_96px_96px_96px] items-center gap-0 px-4 py-3 ${
-                      item.status ? "cursor-pointer hover:bg-[var(--gray-50)]" : ""
+                      ["신청 거절", "승인 대기", "신청 승인", "챌린지 삭제"].includes(item.status)
+                        ? "cursor-pointer hover:bg-[var(--gray-50)]"
+                        : ""
                     }`}
                     onClick={() => handleAppliedRowClick(item.status, item.id)}
                   >

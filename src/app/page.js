@@ -6,11 +6,9 @@ import Gnb from "@/components/common/GNB/Gnb";
 import Button from "@/components/common/Button/Button";
 import Container from "@/components/common/Container/Container";
 import { getCurrentUser } from "@/services/user";
-
 import TrophyIcon from "@/assets/icons/ic-trophy.svg";
 import HeartIcon from "@/assets/icons/ic-heart-inactive-l.svg";
 import FeedbackIcon from "@/assets/icons/ic-landing-feedback.svg";
-
 import LandingImage1 from "@/assets/images/img_landing_1.svg";
 import LandingImage1Sm from "@/assets/images/img_landing_1_sm.svg";
 import LandingImage2 from "@/assets/images/img_landing_2.svg";
@@ -36,7 +34,6 @@ export default function Home() {
     };
     fetchUser();
   }, []);
-
   return (
     <div className="min-h-screen bg-[var(--gray-50)] text-[var(--gray-900)]">
       <Gnb
