@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import Script from "next/script";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -13,6 +14,8 @@ import Button from "@/components/common/Button/Button";
 import Container from "@/components/common/Container/Container";
 import { login } from "@/services/user";
 import { useAuthStore } from "@/store/authStore";
+import { toast } from "@/hooks/use-toast";
+import { googleLogin } from "@/services/user";
 
 const loginSchema = z.object({
   email: z
@@ -33,6 +36,8 @@ export default function LoginPage() {
   const router = useRouter();
   const setToken = useAuthStore((state) => state.setToken);
   const [submitError, setSubmitError] = useState("");
+  const [isGoogleReady, setIsGoogleReady] = useState(false);
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   const {
     register,
@@ -51,14 +56,96 @@ export default function LoginPage() {
       if (token) {
         setToken(token);
       }
+      toast({
+        title: "로그인 성공",
+        description: "환영합니다!",
+      });
       router.push("/");
     } catch (error) {
       setSubmitError(error.message || "로그인에 실패했습니다.");
     }
   };
 
+  const handleGoogleCredential = useCallback(
+    async (response) => {
+      const credential = response?.credential;
+      if (!credential) {
+        toast({
+          title: "로그인 실패",
+          description: "Google 인증에 실패했습니다.",
+        });
+        return;
+      }
+
+      try {
+        const result = await googleLogin({ idToken: credential });
+        const token = result?.data?.token;
+        if (token) {
+          setToken(token);
+        }
+        toast({
+          title: "로그인 성공",
+          description: "환영합니다!",
+        });
+        router.push("/");
+      } catch (error) {
+        toast({
+          title: "로그인 실패",
+          description: error.message || "Google 로그인에 실패했습니다.",
+        });
+      }
+    },
+    [router, setToken]
+  );
+
+  const initGoogle = useCallback(() => {
+    if (!googleClientId) return;
+    if (typeof window === "undefined") return;
+    if (!window.google?.accounts?.id) return;
+
+    window.google.accounts.id.initialize({
+      client_id: googleClientId,
+      callback: handleGoogleCredential,
+      ux_mode: "popup",
+    });
+    setIsGoogleReady(true);
+  }, [googleClientId, handleGoogleCredential]);
+
+  useEffect(() => {
+    initGoogle();
+  }, [initGoogle]);
+
+  const handleGoogleLoginClick = () => {
+    if (!googleClientId) {
+      toast({
+        title: "설정 필요",
+        description: "Google Client ID가 설정되어 있지 않습니다.",
+      });
+      return;
+    }
+
+    if (!isGoogleReady) {
+      initGoogle();
+    }
+
+    if (!window.google?.accounts?.id) {
+      toast({
+        title: "로그인 실패",
+        description: "Google 로그인 모듈을 불러오지 못했습니다.",
+      });
+      return;
+    }
+
+    window.google.accounts.id.prompt();
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-[var(--gray-50)] max-md:pt-[84.5px] md:justify-center">
+      <Script
+        src="https://accounts.google.com/gsi/client"
+        strategy="afterInteractive"
+        onLoad={initGoogle}
+      />
       <Container className="flex flex-col items-center">
         <main className="flex w-full max-w-full flex-col items-center md:max-w-[518px]">
           {/* Logo */}
@@ -98,6 +185,7 @@ export default function LoginPage() {
                 leftIcon={<GoogleIcon className="h-6 w-6" />}
                 className="mt-6 border-gray-200"
                 type="button"
+                onClick={handleGoogleLoginClick}
               >
                 Google로 시작하기
               </Button>

@@ -1,7 +1,11 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Gnb from "@/components/common/GNB/Gnb";
 import Button from "@/components/common/Button/Button";
 import Container from "@/components/common/Container/Container";
+import { getCurrentUser } from "@/services/user";
 
 import TrophyIcon from "@/assets/icons/ic-trophy.svg";
 import HeartIcon from "@/assets/icons/ic-heart-inactive-l.svg";
@@ -19,9 +23,27 @@ import HeroBgSm from "@/assets/images/img_bg_sm.svg";
 import Logo from "@/assets/icons/ic-logo.svg";
 
 export default function Home() {
+  const [user, setUser] = useState({ isLoggedIn: false, role: "guest" });
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await getCurrentUser();
+        setUser(userData);
+      } catch {
+        setUser({ isLoggedIn: false, role: "guest" });
+      }
+    };
+    fetchUser();
+  }, []);
+
   return (
     <div className="min-h-screen bg-[var(--gray-50)] text-[var(--gray-900)]">
-      <Gnb isLoggedIn={false} />
+      <Gnb
+        isLoggedIn={user?.isLoggedIn || false}
+        role={user?.role || "guest"}
+        user={user?.user}
+      />
 
       <main>
         <section className="relative overflow-hidden bg-[var(--gray-900)]">

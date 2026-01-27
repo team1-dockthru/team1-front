@@ -196,17 +196,16 @@ export default function MyChallengesPage() {
     return appliedRows.slice(start, start + appliedPageSize);
   }, [appliedPage, appliedRows]);
 
-  const handleAppliedRowClick = (status) => {
-    if (status === "신청 거절") {
-      router.push("/challenges-reject");
-      return;
-    }
-    if (status === "승인 대기") {
-      router.push("/challenges-pending");
-      return;
-    }
-    if (status === "챌린지 삭제") {
-      router.push("/challenges-delete");
+  const handleAppliedRowClick = (status, id) => {
+    const statusRouteMap = {
+      "승인 대기": "pending",
+      "신청 거절": "rejected",
+      "신청 승인": "approved",
+      "챌린지 삭제": "deleted",
+    };
+    const mappedStatus = statusRouteMap[status];
+    if (mappedStatus && id) {
+      router.push(`/challenges-status/${mappedStatus}/${id}`);
     }
   };
 
@@ -214,12 +213,10 @@ export default function MyChallengesPage() {
     <div className="min-h-screen bg-[var(--gray-50)]">
       <Gnb
         notifications={MOCK_NOTIFICATIONS}
-        useUserDropdown
-        userDropdownProps={{
-          user: { name: "체다치즈", role: "일반" },
-          onMyChallenge: () => router.push("/challenges-my"),
-          onLogout: () => console.log("logout"),
-        }}
+        isLoggedIn
+        role="member"
+        user={{ name: "체다치즈", role: "일반" }}
+        onMyChallenge={() => router.push("/challenges-my")}
       />
       <Container className="py-10 md:py-[60px]">
         <div className="mb-6 flex flex-col gap-6 md:mb-8">
@@ -283,9 +280,9 @@ export default function MyChallengesPage() {
                   <div
                     key={item.id}
                     className={`grid grid-cols-[72px_96px_88px_minmax(280px,1fr)_96px_96px_96px_96px] items-center gap-0 px-4 py-3 ${
-                      item.status === "신청 거절" ? "cursor-pointer hover:bg-[var(--gray-50)]" : ""
+                      item.status ? "cursor-pointer hover:bg-[var(--gray-50)]" : ""
                     }`}
-                    onClick={() => handleAppliedRowClick(item.status)}
+                    onClick={() => handleAppliedRowClick(item.status, item.id)}
                   >
                       <span className="font-14-regular text-center text-[var(--gray-600)]">
                         {item.id}

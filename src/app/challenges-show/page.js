@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Container from '@/components/common/Container/Container';
 import Gnb from '@/components/common/GNB/Gnb';
@@ -12,6 +12,7 @@ import Pagination from '@/components/common/PageButton/Pagination/Pagination';
 import Sort from '@/components/common/Sort/Sort';
 import Search from '@/components/common/Search/Search';
 import FilterModal from '@/components/common/FilterModal/FilterModal';
+import { getCurrentUser } from '@/services/user';
 
 const MOCK_CHALLENGES = [
   {
@@ -91,6 +92,19 @@ export default function ChallengeListPage() {
     docType: '',
     status: '',
   });
+  const [user, setUser] = useState({ isLoggedIn: false, role: 'guest' });
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await getCurrentUser();
+        setUser(userData);
+      } catch {
+        setUser({ isLoggedIn: false, role: 'guest' });
+      }
+    };
+    fetchUser();
+  }, []);
 
   const filterCount =
     appliedFilters.fields.length +
@@ -138,7 +152,12 @@ export default function ChallengeListPage() {
 
   return (
     <div className="min-h-screen bg-[var(--gray-50)]">
-      <Gnb notifications={MOCK_NOTIFICATIONS} />
+      <Gnb
+        notifications={MOCK_NOTIFICATIONS}
+        isLoggedIn={user?.isLoggedIn || false}
+        role={user?.role || 'guest'}
+        user={user?.user}
+      />
       <Container className="py-10 md:py-[60px]">
         {/* Header Section */}
         <div className="mb-6 flex flex-col gap-6 md:mb-8">

@@ -46,7 +46,7 @@ const Input = forwardRef(function Input(
           className={cn(
             'font-14-regular pr-14 h-[48px] md:h-14',
             // wrapper에서 border를 잡기 때문에 input 자체 border는 제거
-            'border-0 focus-visible:ring-0 focus-visible:ring-offset-0'
+            'border-0 rounded-[12px] focus-visible:ring-0 focus-visible:ring-offset-0'
           )}
           value={value}
           onChange={onChange}

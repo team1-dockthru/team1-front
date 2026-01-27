@@ -44,7 +44,7 @@ export default function SignupPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(signupSchema),
     mode: "onBlur",
@@ -55,10 +55,15 @@ export default function SignupPage() {
     try {
       const { email, password, nickname } = data;
       await signup({ email, password, nickname, profileImage: "USER" });
-      router.push("/login");
+      router.push("/challenges-show");
     } catch (error) {
       setSubmitError(error.message || "회원가입에 실패했습니다.");
     }
+  };
+
+  const onInvalid = (formErrors) => {
+    const firstError = Object.values(formErrors)?.[0];
+    setSubmitError(firstError?.message || "입력값을 확인해주세요.");
   };
 
   return (
@@ -74,7 +79,10 @@ export default function SignupPage() {
           </Link>
 
           {/* Signup Form */}
-          <form className="flex w-full flex-col gap-6" onSubmit={handleSubmit(onSubmit)}>
+          <form
+            className="flex w-full flex-col gap-6"
+            onSubmit={handleSubmit(onSubmit, onInvalid)}
+          >
             <Input
               label="이메일"
               placeholder="이메일을 입력해주세요"
@@ -106,7 +114,7 @@ export default function SignupPage() {
               <p className="text-sm text-[var(--error)]">{submitError}</p>
             ) : null}
             <div>
-              <Button fullWidth size="lg" type="submit">
+              <Button fullWidth size="lg" type="submit" isLoading={isSubmitting}>
                 회원가입
               </Button>
             </div>
