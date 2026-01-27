@@ -4,7 +4,7 @@
 import * as mockChallengeService from './mockChallengeService';
 import * as apiChallengeService from './apiChallengeService';
 
-const USE_API = false; // true: API 사용, false: Mock 사용
+const USE_API = true; // true: API 사용, false: Mock 사용
 
 const challengeService = USE_API ? apiChallengeService : mockChallengeService;
 

@@ -1,12 +1,15 @@
 // API Challenge Service
 // 실제 백엔드 API 호출
 
+// 백엔드 API URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
 /**
  * 챌린지 상세 조회
  */
 export async function getChallengeDetail(challengeId) {
   try {
-    const response = await fetch(`/api/challenges/${challengeId}`, {
+    const response = await fetch(`${API_BASE_URL}/challenges/${challengeId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -32,7 +35,7 @@ export async function getChallengeDetail(challengeId) {
  */
 export async function joinChallenge(challengeId) {
   try {
-    const response = await fetch(`/api/challenges/${challengeId}/join`, {
+    const response = await fetch(`${API_BASE_URL}/challenges/${challengeId}/participants`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -55,7 +58,7 @@ export async function joinChallenge(challengeId) {
  */
 export async function updateChallenge(challengeId, data) {
   try {
-    const response = await fetch(`/api/challenges/${challengeId}`, {
+    const response = await fetch(`${API_BASE_URL}/challenges/${challengeId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -79,7 +82,7 @@ export async function updateChallenge(challengeId, data) {
  */
 export async function deleteChallenge(challengeId) {
   try {
-    const response = await fetch(`/api/challenges/${challengeId}`, {
+    const response = await fetch(`${API_BASE_URL}/challenges/${challengeId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

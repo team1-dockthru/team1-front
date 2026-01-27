@@ -3,7 +3,7 @@
 import * as mockWorkService from './mockWorkService';
 import * as apiWorkService from './apiWorkService';
 
-const USE_API = false;
+const USE_API = true;
 
 const workService = USE_API ? apiWorkService : mockWorkService;
 

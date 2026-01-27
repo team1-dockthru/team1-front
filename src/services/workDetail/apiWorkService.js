@@ -1,10 +1,13 @@
 // API 호출
 
+// 백엔드 API URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
 /**
  * 작업물 상세 조회
  */
 export async function getWorkDetail(workId) {
-  const response = await fetch(`/api/works/${workId}`);
+  const response = await fetch(`${API_BASE_URL}/works/${workId}`);
   
   if (!response.ok) {
     throw new Error('작업물 조회 실패');
@@ -19,7 +22,7 @@ export async function getWorkDetail(workId) {
  */
 export async function toggleLike(workId, isLiked) {
   const method = isLiked ? 'DELETE' : 'POST';
-  const response = await fetch(`/api/works/${workId}/likes`, { method });
+  const response = await fetch(`${API_BASE_URL}/works/${workId}/likes`, { method });
   
   if (!response.ok) {
     throw new Error('좋아요 처리 실패');
@@ -32,7 +35,7 @@ export async function toggleLike(workId, isLiked) {
  * 피드백 작성
  */
 export async function createFeedback(workId, content) {
-  const response = await fetch(`/api/works/${workId}/feedbacks`, {
+  const response = await fetch(`${API_BASE_URL}/works/${workId}/feedbacks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ content }),
@@ -50,7 +53,7 @@ export async function createFeedback(workId, content) {
  */
 export async function loadMoreFeedbacks(workId, page, size = 3) {
   const response = await fetch(
-    `/api/works/${workId}/feedbacks?page=${page}&size=${size}`
+    `${API_BASE_URL}/works/${workId}/feedbacks?page=${page}&size=${size}`
   );
   
   if (!response.ok) {
@@ -65,7 +68,7 @@ export async function loadMoreFeedbacks(workId, page, size = 3) {
  * 작업물 수정
  */
 export async function updateWork(workId, data) {
-  const response = await fetch(`/api/works/${workId}`, {
+  const response = await fetch(`${API_BASE_URL}/works/${workId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -82,7 +85,7 @@ export async function updateWork(workId, data) {
  * 작업물 삭제
  */
 export async function deleteWork(workId) {
-  const response = await fetch(`/api/works/${workId}`, {
+  const response = await fetch(`${API_BASE_URL}/works/${workId}`, {
     method: 'DELETE',
   });
   
