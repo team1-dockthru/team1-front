@@ -1,0 +1,1 @@
+export { markNotificationRead } from "./apiNotificationService";

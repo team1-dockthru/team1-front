@@ -1,17 +1,19 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import Container from '@/components/common/Container/Container';
 import Gnb from '@/components/common/GNB/Gnb';
 import ChallengeCard from '@/components/challenge/ChallengeCard';
 import Pagination from '@/components/common/PageButton/Pagination/Pagination';
-import Sort from '@/components/common/Sort/Sort';
 import Search from '@/components/common/Search/Search';
 import FilterModal from '@/components/common/FilterModal/FilterModal';
 import challengesShowData from '@/data/challenges-show.json';
 import notificationsData from '@/data/notifications.json';
 import { challengesShowSchema, notificationsSchema } from '@/schemas/challengeSchemas';
+import PlusIcon from '@/assets/icons/ic-plus-s.svg';
+import FilterActiveIcon from '@/assets/icons/ic-filter-active.svg';
+import FilterInactiveIcon from '@/assets/icons/ic-filter-inactive.svg';
 
 export default function ChallengeListPage() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -22,11 +24,6 @@ export default function ChallengeListPage() {
     docType: '',
     status: '',
   });
-  const [mounted, setMounted] = useState(false);
-  
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const MOCK_CHALLENGES = useMemo(() => {
     try {
@@ -53,14 +50,6 @@ export default function ChallengeListPage() {
     setAppliedFilters(filters);
     setIsFilterOpen(false);
   };
-
-  if (!mounted) {
-    return null;
-  }
-
-  const PlusIcon = require('@/assets/icons/ic-plus-s.svg').default;
-  const FilterActiveIcon = require('@/assets/icons/ic-filter-active.svg').default;
-  const FilterInactiveIcon = require('@/assets/icons/ic-filter-inactive.svg').default;
 
   const filteredChallenges = useMemo(() => {
     const docTypeMap = {
@@ -94,7 +83,7 @@ export default function ChallengeListPage() {
 
       return matchesField && matchesDocType && matchesStatus && matchesSearch;
     });
-  }, [appliedFilters, searchQuery]);
+  }, [appliedFilters, searchQuery, MOCK_CHALLENGES]);
 
   return (
     <div className="min-h-screen bg-[var(--gray-50)]">

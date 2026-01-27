@@ -1,39 +1,46 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Gnb from "@/components/common/GNB/Gnb";
 import Button from "@/components/common/Button/Button";
 import Container from "@/components/common/Container/Container";
+import { getCurrentUser } from "@/services/user";
+import TrophyIcon from "@/assets/icons/ic-trophy.svg";
+import HeartIcon from "@/assets/icons/ic-heart-inactive-l.svg";
+import FeedbackIcon from "@/assets/icons/ic-landing-feedback.svg";
+import LandingImage1 from "@/assets/images/img_landing_1.svg";
+import LandingImage1Sm from "@/assets/images/img_landing_1_sm.svg";
+import LandingImage2 from "@/assets/images/img_landing_2.svg";
+import LandingImage2Sm from "@/assets/images/img_landing_2_sm.svg";
+import LandingImage3 from "@/assets/images/img_landing_3.svg";
+import LandingImage3Sm from "@/assets/images/img_landing_3_sm.svg";
+import HeroBgLg from "@/assets/images/img_bg_lg.svg";
+import HeroBgMd from "@/assets/images/img_bg_md.svg";
+import HeroBgSm from "@/assets/images/img_bg_sm.svg";
+import Logo from "@/assets/icons/ic-logo.svg";
 
 export default function Home() {
-  const [mounted, setMounted] = useState(false);
-  
+  const [user, setUser] = useState({ isLoggedIn: false, role: "guest" });
+
   useEffect(() => {
-    setMounted(true);
+    const fetchUser = async () => {
+      try {
+        const userData = await getCurrentUser();
+        setUser(userData);
+      } catch {
+        setUser({ isLoggedIn: false, role: "guest" });
+      }
+    };
+    fetchUser();
   }, []);
-
-  if (!mounted) {
-    return null;
-  }
-
-  const TrophyIcon = require("@/assets/icons/ic-trophy.svg").default;
-  const HeartIcon = require("@/assets/icons/ic-heart-inactive-l.svg").default;
-  const FeedbackIcon = require("@/assets/icons/ic-landing-feedback.svg").default;
-  const LandingImage1 = require("@/assets/images/img_landing_1.svg").default;
-  const LandingImage1Sm = require("@/assets/images/img_landing_1_sm.svg").default;
-  const LandingImage2 = require("@/assets/images/img_landing_2.svg").default;
-  const LandingImage2Sm = require("@/assets/images/img_landing_2_sm.svg").default;
-  const LandingImage3 = require("@/assets/images/img_landing_3.svg").default;
-  const LandingImage3Sm = require("@/assets/images/img_landing_3_sm.svg").default;
-  const HeroBgLg = require("@/assets/images/img_bg_lg.svg").default;
-  const HeroBgMd = require("@/assets/images/img_bg_md.svg").default;
-  const HeroBgSm = require("@/assets/images/img_bg_sm.svg").default;
-  const Logo = require("@/assets/icons/ic-logo.svg").default;
-
   return (
     <div className="min-h-screen bg-[var(--gray-50)] text-[var(--gray-900)]">
-      <Gnb isLoggedIn={false} />
+      <Gnb
+        isLoggedIn={user?.isLoggedIn || false}
+        role={user?.role || "guest"}
+        user={user?.user}
+      />
 
       <main>
         <section className="relative overflow-hidden bg-[var(--gray-900)]">

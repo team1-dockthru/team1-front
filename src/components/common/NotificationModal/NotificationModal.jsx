@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 export default function NotificationModal({
   notifications = [],
   className,
+  onRead,
 }) {
   return (
     <div className={cn(
@@ -27,6 +28,9 @@ export default function NotificationModal({
           notifications.map((noti, index) => (
             <div 
               key={noti.id || index}
+              onClick={() => {
+                if (onRead) onRead(noti);
+              }}
               className={cn(
                 "flex flex-col gap-2 p-4", // 좌우 16px(px-4), 상하 12px? p-4는 16px. 상하 12px 요청이었으니 py-3 px-4가 맞음.
                 "py-3 px-4",

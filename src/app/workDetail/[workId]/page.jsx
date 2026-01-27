@@ -138,7 +138,8 @@ export default function WorkDetailPage({ params }) {
       <Gnb 
         isLoggedIn={user?.isLoggedIn || false} 
         role={user?.role || 'guest'} 
-        hasNotification={user?.hasNotification || false} 
+        hasNotification={user?.hasNotification || false}
+        user={user?.user}
       />
 
       <main className="mx-auto w-full">

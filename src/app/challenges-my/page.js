@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Container from "@/components/common/Container/Container";
 import Gnb from "@/components/common/GNB/Gnb";
@@ -9,12 +9,10 @@ import Search from "@/components/common/Search/Search";
 import Sort from "@/components/common/Sort/Sort";
 import ChallengeCard from "@/components/challenge/ChallengeCard";
 import Pagination from "@/components/common/PageButton/Pagination/Pagination";
+import PlusIcon from "@/assets/icons/ic-plus-s.svg";
 import challengesMyData from "@/data/challenges-my.json";
 import notificationsData from "@/data/notifications.json";
 import { challengesMySchema, notificationsSchema } from "@/schemas/challengeSchemas";
-
-const validatedChallengesMy = challengesMySchema.parse(challengesMyData);
-const validatedNotifications = notificationsSchema.parse(notificationsData);
 
 const TAB_ITEMS = [
   { key: "participating", label: "참여중인 챌린지" },
@@ -35,17 +33,22 @@ export default function MyChallengesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [applyStatus, setApplyStatus] = useState("");
   const [appliedPage, setAppliedPage] = useState(1);
-  const [mounted, setMounted] = useState(false);
-  
-  useEffect(() => {
-    setMounted(true);
+
+  const validatedChallengesMy = useMemo(() => {
+    try {
+      return challengesMySchema.parse(challengesMyData);
+    } catch {
+      return challengesMyData;
+    }
   }, []);
 
-  if (!mounted) {
-    return null;
-  }
-
-  const PlusIcon = require("@/assets/icons/ic-plus-s.svg").default;
+  const validatedNotifications = useMemo(() => {
+    try {
+      return notificationsSchema.parse(notificationsData);
+    } catch {
+      return notificationsData;
+    }
+  }, []);
 
   const MOCK_MY_CHALLENGES = useMemo(() => {
     return [
@@ -87,17 +90,16 @@ export default function MyChallengesPage() {
     return appliedRows.slice(start, start + appliedPageSize);
   }, [appliedPage, appliedRows]);
 
-  const handleAppliedRowClick = (status) => {
-    if (status === "신청 거절") {
-      router.push("/challenges-reject");
-      return;
-    }
-    if (status === "승인 대기") {
-      router.push("/challenges-pending");
-      return;
-    }
-    if (status === "챌린지 삭제") {
-      router.push("/challenges-delete");
+  const handleAppliedRowClick = (status, id) => {
+    const statusRouteMap = {
+      "승인 대기": "pending",
+      "신청 거절": "rejected",
+      "신청 승인": "approved",
+      "챌린지 삭제": "deleted",
+    };
+    const mappedStatus = statusRouteMap[status];
+    if (mappedStatus && id) {
+      router.push(`/challenges-status/${mappedStatus}/${id}`);
     }
   };
 
@@ -105,12 +107,8 @@ export default function MyChallengesPage() {
     <div className="min-h-screen bg-[var(--gray-50)]">
       <Gnb
         notifications={validatedNotifications}
-        useUserDropdown
-        userDropdownProps={{
-          user: { name: "체다치즈", role: "일반" },
-          onMyChallenge: () => router.push("/challenges-my"),
-          onLogout: () => console.log("logout"),
-        }}
+        user={{ name: "체다치즈", role: "일반" }}
+        onMyChallenge={() => router.push("/challenges-my")}
       />
       <Container className="py-10 md:py-[60px]">
         <div className="mb-6 flex flex-col gap-6 md:mb-8">
@@ -174,9 +172,11 @@ export default function MyChallengesPage() {
                   <div
                     key={item.id}
                     className={`grid grid-cols-[72px_96px_88px_minmax(280px,1fr)_96px_96px_96px_96px] items-center gap-0 px-4 py-3 ${
-                      item.status === "신청 거절" ? "cursor-pointer hover:bg-[var(--gray-50)]" : ""
+                      ["신청 거절", "승인 대기", "신청 승인", "챌린지 삭제"].includes(item.status)
+                        ? "cursor-pointer hover:bg-[var(--gray-50)]"
+                        : ""
                     }`}
-                    onClick={() => handleAppliedRowClick(item.status)}
+                    onClick={() => handleAppliedRowClick(item.status, item.id)}
                   >
                       <span className="font-14-regular text-center text-[var(--gray-600)]">
                         {item.id}

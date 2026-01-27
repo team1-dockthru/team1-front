@@ -1,13 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import Logo from "@/assets/icons/ic-logo.svg";
 import Input from "@/components/common/Input/Input";
 import Button from "@/components/common/Button/Button";
 import Container from "@/components/common/Container/Container";
+import { signup } from "@/services/user";
 
 const signupSchema = z
   .object({
@@ -35,31 +38,33 @@ const signupSchema = z
   });
 
 export default function SignupPage() {
-  const [mounted, setMounted] = useState(false);
-  
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const router = useRouter();
+  const [submitError, setSubmitError] = useState("");
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(signupSchema),
     mode: "onBlur",
   });
 
-  const onSubmit = (data) => {
-    console.log("Signup data:", data);
-    // TODO: 회원가입 API 연동
+  const onSubmit = async (data) => {
+    setSubmitError("");
+    try {
+      const { email, password, nickname } = data;
+      await signup({ email, password, nickname, profileImage: "USER" });
+      router.push("/challenges-show");
+    } catch (error) {
+      setSubmitError(error.message || "회원가입에 실패했습니다.");
+    }
   };
 
-  if (!mounted) {
-    return null;
-  }
-
-  const Logo = require("@/assets/icons/ic-logo.svg").default;
+  const onInvalid = (formErrors) => {
+    const firstError = Object.values(formErrors)?.[0];
+    setSubmitError(firstError?.message || "입력값을 확인해주세요.");
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--gray-50)] max-md:pt-[84.5px] md:justify-center">
@@ -74,7 +79,10 @@ export default function SignupPage() {
           </Link>
 
           {/* Signup Form */}
-          <form className="flex w-full flex-col gap-6" onSubmit={handleSubmit(onSubmit)}>
+          <form
+            className="flex w-full flex-col gap-6"
+            onSubmit={handleSubmit(onSubmit, onInvalid)}
+          >
             <Input
               label="이메일"
               placeholder="이메일을 입력해주세요"
@@ -102,8 +110,11 @@ export default function SignupPage() {
               errorText={errors.passwordConfirm?.message}
               {...register("passwordConfirm")}
             />
+            {submitError ? (
+              <p className="text-sm text-[var(--error)]">{submitError}</p>
+            ) : null}
             <div>
-              <Button fullWidth size="lg" type="submit">
+              <Button fullWidth size="lg" type="submit" isLoading={isSubmitting}>
                 회원가입
               </Button>
             </div>

@@ -14,6 +14,9 @@ import UserDropdown from "@/components/common/UserDropdown/UserDropdown";
 
 import { cn } from "@/lib/utils";
 import NotificationModal from "@/components/common/NotificationModal/NotificationModal";
+import { logout } from "@/services/user";
+import { useAuthStore } from "@/store/authStore";
+import { markNotificationRead } from "@/services/notification";
 
 const DEV_PAGES = [
   { name: "스타일 가이드", href: "/style-guide" },
@@ -29,19 +32,66 @@ const DEV_PAGES = [
 export default function Gnb({
   isLoggedIn = true, // 데모를 위해 true로 변경 (또는 프롭으로 조절)
   role = 'member', // guest | member | admin
-  hasNotification = true, // 데모를 위해 true로 변경
+  hasNotification = false,
   notifications = [], // 알림 목록 데이터
   useUserDropdown = false,
   userDropdownProps,
+  user,
+  onLogout,
+  onMyChallenge,
 }) {
   const router = useRouter();
-  const BellIcon = hasNotification ? BellNoti : BellEmpty;
+  const clearToken = useAuthStore((state) => state.clearToken);
+  const [localNotifications, setLocalNotifications] = useState(notifications);
+  const derivedHasNotification =
+    typeof hasNotification === "boolean" ? hasNotification : notifications.length > 0;
+  const lastNotificationsSigRef = useRef("");
+
+  useEffect(() => {
+    const signature = notifications
+      .map((noti, index) =>
+        [
+          noti?.id ?? index,
+          noti?.readAt ?? "",
+          noti?.createdAt ?? "",
+          noti?.message ?? "",
+          noti?.content ?? "",
+          noti?.date ?? "",
+        ].join("|")
+      )
+      .join("||");
+
+    if (lastNotificationsSigRef.current !== signature) {
+      lastNotificationsSigRef.current = signature;
+      setLocalNotifications(notifications);
+    }
+  }, [notifications]);
+  const BellIcon = derivedHasNotification ? BellNoti : BellEmpty;
   const ProfileIcon = role === 'admin' ? ProfileAdmin : ProfileMember;
   const isAdmin = role === 'admin';
+  const displayUserName = user?.nickname || user?.name || userDropdownProps?.user?.name || '사용자';
+  const displayUserRole = role === 'admin' ? '관리자' : (userDropdownProps?.user?.role || '일반');
+  const shouldUseUserDropdown = useUserDropdown || Boolean(user || onLogout || onMyChallenge);
   const resolvedUserDropdownProps = {
-    ...(userDropdownProps || {}),
+    user: userDropdownProps?.user || { name: displayUserName, role: displayUserRole },
+    ...userDropdownProps,
     onMyChallenge:
-      userDropdownProps?.onMyChallenge || (() => router.push("/challenges-my")),
+      userDropdownProps?.onMyChallenge ||
+      onMyChallenge ||
+      (() => router.push("/challenges-my")),
+    onLogout:
+      userDropdownProps?.onLogout ||
+      onLogout ||
+      (async () => {
+        try {
+          await logout();
+        } catch (error) {
+          alert(error.message || "로그아웃에 실패했습니다.");
+          return;
+        }
+        clearToken();
+        window.location.href = "/";
+      }),
   };
 
   const [isDevMenuOpen, setIsDevMenuOpen] = useState(false);
@@ -120,7 +170,7 @@ export default function Gnb({
 
           {!isLoggedIn ? (
             <Link
-              href="/wip"
+              href="/login"
               className={cn(
                 "font-14-medium inline-flex h-8 w-20 items-center justify-center rounded-[10px] border border-[var(--gray-800)] bg-white text-[var(--gray-900)]",
                 "hover:bg-[var(--gray-50)]"
@@ -135,19 +185,35 @@ export default function Gnb({
                 <button
                   type="button"
                   onClick={() => setIsNotiOpen(!isNotiOpen)}
-                  className="flex h-8 w-8 items-center justify-center transition-opacity hover:opacity-80"
+                  className="flex h-8 w-8 items-center justify-center transition-opacity hover:opacity-80 cursor-pointer"
                   aria-label="알림"
                 >
                   <BellIcon className="h-6 w-6" />
                 </button>
                 {isNotiOpen && (
                   <div className="absolute right-0 top-full z-50 mt-2">
-                    <NotificationModal notifications={notifications} />
+                    <NotificationModal
+                      notifications={localNotifications}
+                      onRead={async (noti) => {
+                        if (!noti?.id) return;
+                        try {
+                          const result = await markNotificationRead(noti.id);
+                          const readAt = result?.data?.readAt || new Date().toISOString();
+                          setLocalNotifications((prev) =>
+                            prev.map((item) =>
+                              item.id === noti.id ? { ...item, readAt } : item
+                            )
+                          );
+                        } catch (error) {
+                          alert(error.message || "알림 읽음 처리에 실패했습니다.");
+                        }
+                      }}
+                    />
                   </div>
                 )}
               </div>
 
-              {useUserDropdown ? (
+              {shouldUseUserDropdown && !isAdmin ? (
                 <UserDropdown {...resolvedUserDropdownProps} />
               ) : (
                 <Link href="/wip" className="flex h-8 w-8 items-center justify-center" aria-label="프로필">

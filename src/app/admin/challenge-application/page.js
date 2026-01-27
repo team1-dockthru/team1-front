@@ -7,6 +7,8 @@ import Search from '@/components/common/Search/Search';
 import Sort from '@/components/common/Sort/Sort';
 import Pagination from '@/components/common/PageButton/Pagination/Pagination';
 import { cn } from '@/lib/utils';
+import { logout } from '@/services/user';
+import { useAuthStore } from '@/store/authStore';
 import adminChallengeData from '@/data/admin-challenge-application.json';
 import { adminChallengesSchema } from '@/schemas/challengeSchemas';
 
@@ -56,6 +58,7 @@ function getStatusStyles(status) {
 }
 
 export default function ChallengeApplicationPage() {
+  const clearToken = useAuthStore((state) => state.clearToken);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortValue, setSortValue] = useState('승인 대기');
   const [currentPage, setCurrentPage] = useState(1);
@@ -107,8 +110,15 @@ export default function ChallengeApplicationPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleLogout = () => {
-    console.log('로그아웃');
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      alert(error.message || '로그아웃에 실패했습니다.');
+      return;
+    }
+    clearToken();
+    window.location.href = '/';
   };
 
   const handleApprovalPending = () => {
