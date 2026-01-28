@@ -6,6 +6,14 @@ import PeopleIcon from '@/assets/icons/ic-person-default.svg';
 import ClockIconS from '@/assets/icons/ic-deadline-s.svg';
 import ClockIconM from '@/assets/icons/ic-deadline-m.svg';
 import PersonYellowIcon from '@/assets/icons/ic-person-s-yellow.svg';
+import MeatballsIcon from '@/assets/icons/ic-meatballs-menu.svg';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 
 /**
  * 챌린지 목록용 카드 컴포넌트 (목록형 디자인 반영)
@@ -17,6 +25,9 @@ export default function ChallengeCard({
   participants,
   statusText, // 상단 배지 텍스트 (e.g., '모집이 완료된 상태에요', '챌린지가 마감되었어요')
   isClosed,   // 마감 여부 (검은색 배지)
+  isAdmin = false,
+  onEdit,
+  onDelete,
   className,
 }) {
   return (
@@ -26,14 +37,14 @@ export default function ChallengeCard({
         className
       )}
     >
-      <div className="flex flex-col p-5 md:p-6">
-        {/* Upper Section: Status Badge (Optional) */}
-        {statusText && (
-          <div className="mb-3 flex items-center">
+      <div className="relative flex flex-col p-5 md:p-6">
+        {/* Upper Section: Status Badge (Optional) + Admin Menu */}
+        <div className={cn('flex items-center', statusText ? 'mb-3' : 'mb-0')}>
+          {statusText ? (
             <div className={cn(
               "flex h-8 w-fit items-center justify-center gap-1.5 rounded-full px-3 font-12-medium shrink-0",
-              isClosed 
-                ? "bg-[var(--gray-900)] text-white" 
+              isClosed
+                ? "bg-[var(--gray-900)] text-white"
                 : "bg-[var(--gray-100)] text-[var(--gray-600)]"
             )}>
               {isClosed ? (
@@ -43,8 +54,37 @@ export default function ChallengeCard({
               )}
               <span className="leading-none whitespace-nowrap">{statusText}</span>
             </div>
-          </div>
-        )}
+          ) : null}
+        </div>
+
+        {isAdmin ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="absolute right-5 top-5 inline-flex size-8 items-center justify-center rounded-full hover:bg-[var(--gray-50)] md:right-6 md:top-6"
+              aria-label="챌린지 관리"
+            >
+              <MeatballsIcon className="size-5 text-[var(--gray-400)]" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-[120px] border-[#d4d4d4] bg-white p-0"
+            >
+              <DropdownMenuItem
+                onClick={onEdit}
+                className="cursor-pointer justify-center py-3 text-center text-sm font-medium text-[#737373] focus:text-[#262626]"
+              >
+                수정하기
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="m-0 bg-[#d4d4d4]" />
+              <DropdownMenuItem
+                onClick={onDelete}
+                className="cursor-pointer justify-center py-3 text-center text-sm font-medium text-[#737373] focus:text-[#ef4444]"
+              >
+                삭제하기
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
 
         {/* Title */}
         <h3 className="mb-4 font-18-bold leading-7 text-[var(--gray-900)] md:font-20-bold">

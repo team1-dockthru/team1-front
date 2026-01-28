@@ -64,9 +64,39 @@ export async function getChallengeRequests({ userId, requestStatus } = {}) {
   return data?.data || [];
 }
 
+export async function getChallengeRequestDetail(requestId) {
+  const data = await request(`/challenges/requests/${requestId}`);
+  return data?.data || data;
+}
+
+export async function processChallengeRequest(requestId, payload) {
+  const data = await request(`/challenges/requests/${requestId}/process`, {
+    method: "PATCH",
+    body: payload,
+  });
+  return data?.data || data;
+}
+
+export async function getChallengeDetailRaw(challengeId) {
+  const data = await request(`/challenges/${challengeId}`);
+  return data?.data || data;
+}
+
 export async function createChallengeRequest(payload) {
   return request("/challenges/requests", {
     method: "POST",
+    body: payload,
+  });
+}
+
+export async function deleteChallengeAsAdmin(challengeId, reason) {
+  const trimmedReason = typeof reason === "string" ? reason.trim() : "";
+  const payload =
+    trimmedReason
+      ? { adminReason: trimmedReason, reason: trimmedReason }
+      : undefined;
+  return request(`/challenges/${challengeId}/admin/delete`, {
+    method: "DELETE",
     body: payload,
   });
 }
@@ -76,21 +106,10 @@ export async function createChallengeRequest(payload) {
  */
 export async function getChallengeDetail(challengeId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/challenges/${challengeId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('챌린지 조회 실패');
-    }
-
-    const data = await response.json();
-    
+    const data = await request(`/challenges/${challengeId}`);
+    const payload = data?.data || data;
     // API 응답 → 공통 인터페이스로 변환
-    return adaptChallengeToCommon(data);
+    return adaptChallengeToCommon(payload);
   } catch (error) {
     console.error('getChallengeDetail 에러:', error);
     throw error;
@@ -125,19 +144,10 @@ export async function joinChallenge(challengeId) {
  */
 export async function updateChallenge(challengeId, data) {
   try {
-    const response = await fetch(`${API_BASE_URL}/challenges/${challengeId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
+    return await request(`/challenges/${challengeId}`, {
+      method: 'PATCH',
+      body: data,
     });
-
-    if (!response.ok) {
-      throw new Error('챌린지 수정 실패');
-    }
-
-    return await response.json();
   } catch (error) {
     console.error('updateChallenge 에러:', error);
     throw error;
@@ -149,18 +159,9 @@ export async function updateChallenge(challengeId, data) {
  */
 export async function deleteChallenge(challengeId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/challenges/${challengeId}`, {
+    return await request(`/challenges/${challengeId}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
     });
-
-    if (!response.ok) {
-      throw new Error('챌린지 삭제 실패');
-    }
-
-    return await response.json();
   } catch (error) {
     console.error('deleteChallenge 에러:', error);
     throw error;

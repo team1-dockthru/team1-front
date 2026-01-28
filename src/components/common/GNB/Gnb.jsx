@@ -71,7 +71,7 @@ export default function Gnb({
   const isAdmin = role === 'admin';
   const displayUserName = user?.nickname || user?.name || userDropdownProps?.user?.name || '사용자';
   const displayUserRole = role === 'admin' ? '관리자' : (userDropdownProps?.user?.role || '일반');
-  const shouldUseUserDropdown = useUserDropdown || Boolean(user || onLogout || onMyChallenge);
+  const shouldUseUserDropdown = useUserDropdown || isLoggedIn;
   const resolvedUserDropdownProps = {
     user: userDropdownProps?.user || { name: displayUserName, role: displayUserRole },
     ...userDropdownProps,
@@ -124,10 +124,10 @@ export default function Gnb({
         {/* Admin menu */}
         {isAdmin ? (
           <nav className="inline-flex flex-1 items-center gap-6">
-            <Link className="font-14-semibold text-[var(--gray-900)]" href="/wip">
+            <Link className="font-14-semibold text-[var(--gray-900)]" href="/admin/challenge-application">
               챌린지 관리
             </Link>
-            <Link className="font-14-medium text-[var(--gray-700)]" href="/wip">
+            <Link className="font-14-medium text-[var(--gray-700)]" href="/challenges-show">
               챌린지 목록
             </Link>
           </nav>
@@ -213,13 +213,15 @@ export default function Gnb({
                 )}
               </div>
 
-              {shouldUseUserDropdown && !isAdmin ? (
-                <UserDropdown {...resolvedUserDropdownProps} />
-              ) : (
-                <Link href="/wip" className="flex h-8 w-8 items-center justify-center" aria-label="프로필">
-                  <ProfileIcon className="h-8 w-8" />
-                </Link>
-              )}
+              {shouldUseUserDropdown ? (
+                <UserDropdown
+                  {...resolvedUserDropdownProps}
+                  user={{
+                    ...resolvedUserDropdownProps.user,
+                    role: isAdmin ? "관리자" : resolvedUserDropdownProps.user.role,
+                  }}
+                />
+              ) : null}
             </>
           )}
         </div>

@@ -10,9 +10,12 @@ const challengeService = USE_API ? apiChallengeService : mockChallengeService;
 
 export const {
   getChallengeDetail,
+  getChallengeDetailRaw,
   joinChallenge,
   updateChallenge,
   deleteChallenge,
+  deleteChallengeAsAdmin,
+  processChallengeRequest,
   createChallengeRequest,
   getChallenges,
   getChallengeRequests,

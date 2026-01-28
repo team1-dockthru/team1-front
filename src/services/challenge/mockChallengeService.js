@@ -22,6 +22,21 @@ export async function getChallengeDetail(challengeId) {
   return mockData;
 }
 
+export async function getChallengeDetailRaw(challengeId) {
+  console.log('[Mock] getChallengeDetailRaw 호출:', challengeId);
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  return {
+    id: Number(challengeId),
+    title: 'Mock 챌린지',
+    sourceUrl: 'https://example.com',
+    field: '프론트엔드',
+    docType: 'OFFICIAL_DOCUMENT',
+    deadlineAt: new Date().toISOString(),
+    maxParticipants: 10,
+    content: 'Mock 챌린지 내용입니다.',
+  };
+}
+
 /**
  * 챌린지 참여하기
  */
@@ -61,5 +76,24 @@ export async function deleteChallenge(challengeId) {
   return {
     success: true,
     message: '챌린지가 삭제되었습니다.',
+  };
+}
+
+export async function deleteChallengeAsAdmin(challengeId, reason) {
+  const trimmedReason = typeof reason === 'string' ? reason.trim() : '';
+  console.log('[Mock] deleteChallengeAsAdmin 호출:', challengeId, trimmedReason);
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  return {
+    success: true,
+    message: '챌린지가 관리자에 의해 삭제되었습니다.',
+  };
+}
+
+export async function processChallengeRequest(requestId, payload) {
+  console.log('[Mock] processChallengeRequest 호출:', requestId, payload);
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  return {
+    success: true,
+    message: '요청 상태가 변경되었습니다.',
   };
 }

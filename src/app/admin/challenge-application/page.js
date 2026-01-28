@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import AdminHeader from '@/components/admin/AdminHeader';
 import Container from '@/components/common/Container/Container';
 import Search from '@/components/common/Search/Search';
@@ -9,8 +10,17 @@ import Pagination from '@/components/common/PageButton/Pagination/Pagination';
 import { cn } from '@/lib/utils';
 import { logout } from '@/services/user';
 import { useAuthStore } from '@/store/authStore';
-import adminChallengeData from '@/data/admin-challenge-application.json';
-import { adminChallengesSchema } from '@/schemas/challengeSchemas';
+const SORT_OPTIONS = [
+  '전체',
+  '승인 대기',
+  '신청 승인',
+  '신청 거절',
+  '신청 시간 빠른순',
+  '신청 시간 느린순',
+  '마감 기한 빠른순',
+  '마감 기한 느린순',
+];
+import { getChallengeRequests } from '@/services/challenge';
 
 function getStatusText(status) {
   switch (status) {
@@ -58,23 +68,63 @@ function getStatusStyles(status) {
 }
 
 export default function ChallengeApplicationPage() {
+  const router = useRouter();
   const clearToken = useAuthStore((state) => state.clearToken);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortValue, setSortValue] = useState('승인 대기');
+  const [sortValue, setSortValue] = useState('전체');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [challenges, setChallenges] = useState([]);
 
-  const validatedData = useMemo(() => {
-    try {
-      return adminChallengesSchema.parse(adminChallengeData);
-    } catch {
-      return adminChallengeData;
-    }
+  useEffect(() => {
+    let isActive = true;
+    const fetchRequests = async () => {
+      setIsLoading(true);
+      setLoadError('');
+      try {
+        const data = await getChallengeRequests();
+        if (!isActive) return;
+        const mapped = (data || []).map((item) => ({
+          id: item.id,
+          field: item.field,
+          category: item.docType,
+          title: item.title,
+          quota: item.maxParticipants,
+          applicationDate: item.createdAt ? item.createdAt.slice(2, 10).replace(/-/g, '/') : '',
+          deadline: item.deadlineAt ? item.deadlineAt.slice(2, 10).replace(/-/g, '/') : '',
+          status:
+            item.requestStatus === 'PENDING'
+              ? 'pending'
+              : item.requestStatus === 'REJECTED'
+                ? 'rejected'
+                : item.requestStatus === 'CANCELLED'
+                  ? 'deleted'
+                  : item.requestStatus === 'APPROVED'
+                    ? 'approved'
+                    : 'pending',
+        }));
+        setChallenges(mapped);
+      } catch (error) {
+        if (!isActive) return;
+        setLoadError(error.message || '목록을 불러오지 못했습니다.');
+        setChallenges([]);
+      } finally {
+        if (isActive) {
+          setIsLoading(false);
+        }
+      }
+    };
+    fetchRequests();
+    return () => {
+      isActive = false;
+    };
   }, []);
 
-  const SORT_OPTIONS = useMemo(() => validatedData.sortOptions, [validatedData]);
-  const [challenges] = useState(() => validatedData.challenges);
-
   const filteredChallenges = challenges.filter((challenge) => {
+    if (sortValue === '전체') {
+      return true;
+    }
     if (sortValue === '승인 대기') {
       return challenge.status === 'pending';
     }
@@ -193,7 +243,19 @@ export default function ChallengeApplicationPage() {
                 </tr>
               </thead>
               <tbody>
-                {paginatedChallenges.length === 0 ? (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan="8" className="px-4 py-12 text-center font-14-regular text-[var(--gray-500)]">
+                      데이터를 불러오는 중입니다.
+                    </td>
+                  </tr>
+                ) : loadError ? (
+                  <tr>
+                    <td colSpan="8" className="px-4 py-12 text-center font-14-regular text-[var(--error)]">
+                      {loadError}
+                    </td>
+                  </tr>
+                ) : paginatedChallenges.length === 0 ? (
                   <tr>
                     <td colSpan="8" className="px-4 py-12 text-center font-14-regular text-[var(--gray-500)]">
                       검색 결과가 없습니다.
@@ -202,10 +264,20 @@ export default function ChallengeApplicationPage() {
                 ) : (
                   paginatedChallenges.map((challenge) => {
                     const statusStyles = getStatusStyles(challenge.status);
+                    const statusRouteMap = {
+                      pending: 'pending',
+                      approved: 'approved',
+                      rejected: 'rejected',
+                      deleted: 'deleted',
+                    };
                     return (
                       <tr
                         key={challenge.id}
-                        className="border-b border-[var(--gray-200)] bg-white hover:bg-[var(--gray-50)] transition-colors"
+                        className="border-b border-[var(--gray-200)] bg-white hover:bg-[var(--gray-50)] transition-colors cursor-pointer"
+                        onClick={() => {
+                          const mappedStatus = statusRouteMap[challenge.status] || 'pending';
+                          router.push(`/challenges-status/${mappedStatus}/${challenge.id}`);
+                        }}
                       >
                         <td className="px-4 py-4 font-14-regular text-[var(--gray-900)]">
                           {challenge.id}

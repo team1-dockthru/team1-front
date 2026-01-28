@@ -9,11 +9,13 @@ import Search from "@/components/common/Search/Search";
 import Sort from "@/components/common/Sort/Sort";
 import ChallengeCard from "@/components/challenge/ChallengeCard";
 import Pagination from "@/components/common/PageButton/Pagination/Pagination";
+import RejectModal from "@/components/common/RejectModal/RejectModal";
 import PlusIcon from "@/assets/icons/ic-plus-s.svg";
 import notificationsData from "@/data/notifications.json";
 import { notificationsSchema } from "@/schemas/challengeSchemas";
 import { getCurrentUser } from "@/services/user/apiUserService";
-import { getChallenges, getChallengeRequests } from "@/services/challenge/apiChallengeService";
+import { getChallenges, getChallengeRequests, deleteChallenge, deleteChallengeAsAdmin } from "@/services/challenge";
+import { toast } from "@/hooks/use-toast";
 
 const TAB_ITEMS = [
   { key: "participating", label: "참여중인 챌린지" },
@@ -95,12 +97,15 @@ export default function MyChallengesPage() {
   const [applyStatus, setApplyStatus] = useState("");
   const [appliedPage, setAppliedPage] = useState(1);
   const [userId, setUserId] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [appliedLoadError, setAppliedLoadError] = useState("");
   const [participatingChallenges, setParticipatingChallenges] = useState([]);
   const [completedChallenges, setCompletedChallenges] = useState([]);
   const [appliedChallenges, setAppliedChallenges] = useState([]);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
 
   const validatedNotifications = useMemo(() => {
     try {
@@ -119,6 +124,7 @@ export default function MyChallengesPage() {
           throw new Error("로그인이 필요합니다.");
         }
         if (isActive) {
+          setCurrentUser(response.user);
           setUserId(response.user.id);
         }
       } catch (error) {
@@ -266,6 +272,68 @@ export default function MyChallengesPage() {
     }
   };
 
+  const isAdmin =
+    String(currentUser?.role || "").toLowerCase() === "admin" ||
+    currentUser?.role === "ADMIN";
+
+  const handleEditChallenge = (challengeId) => {
+    if (!challengeId) return;
+    router.push(`/challenges-new?mode=edit&id=${challengeId}`);
+  };
+
+  const handleDeleteChallenge = async (challengeId) => {
+    if (!challengeId) return;
+    if (isAdmin) {
+      setDeleteTargetId(challengeId);
+      setIsDeleteModalOpen(true);
+      return;
+    }
+    if (!confirm("정말 삭제하시겠습니까?")) return;
+    try {
+      await deleteChallenge(challengeId);
+      setParticipatingChallenges((prev) => prev.filter((item) => item.id !== challengeId));
+      setCompletedChallenges((prev) => prev.filter((item) => item.id !== challengeId));
+      toast({
+        title: "삭제 완료",
+        description: "챌린지가 삭제되었습니다.",
+      });
+    } catch (error) {
+      toast({
+        title: "삭제 실패",
+        description: error.message || "삭제에 실패했습니다.",
+      });
+    }
+  };
+
+  const handleAdminDeleteSubmit = async (reason) => {
+    const targetId = deleteTargetId;
+    if (!targetId) return;
+    const trimmedReason = typeof reason === "string" ? reason.trim() : "";
+    if (!trimmedReason) {
+      toast({
+        title: "삭제 실패",
+        description: "삭제 사유를 입력해주세요.",
+      });
+      return;
+    }
+    try {
+      await deleteChallengeAsAdmin(targetId, reason);
+      setParticipatingChallenges((prev) => prev.filter((item) => item.id !== targetId));
+      setCompletedChallenges((prev) => prev.filter((item) => item.id !== targetId));
+      toast({
+        title: "삭제 완료",
+        description: "챌린지가 삭제되었습니다.",
+      });
+      setIsDeleteModalOpen(false);
+      setDeleteTargetId(null);
+    } catch (error) {
+      toast({
+        title: "삭제 실패",
+        description: error.message || "삭제에 실패했습니다.",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[var(--gray-50)]">
       <Gnb
@@ -397,7 +465,13 @@ export default function MyChallengesPage() {
         ) : filteredChallenges.length > 0 ? (
           <div className="flex flex-col gap-6">
             {filteredChallenges.map((challenge) => (
-              <ChallengeCard key={challenge.id} {...challenge} />
+              <ChallengeCard
+                key={challenge.id}
+                {...challenge}
+                isAdmin={Boolean(currentUser)}
+                onEdit={() => handleEditChallenge(challenge.id)}
+                onDelete={() => handleDeleteChallenge(challenge.id)}
+              />
             ))}
           </div>
         ) : (
@@ -418,6 +492,17 @@ export default function MyChallengesPage() {
           </div>
         ) : null}
       </Container>
+
+      {isAdmin ? (
+        <RejectModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onSubmit={handleAdminDeleteSubmit}
+          title="삭제 사유"
+          placeholder="삭제 사유를 입력해주세요"
+          submitLabel="전송"
+        />
+      ) : null}
     </div>
   );
 }
