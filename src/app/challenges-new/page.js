@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Container from "@/components/common/Container/Container";
 import Gnb from "@/components/common/GNB/Gnb";
 import Input from "@/components/common/Input/Input";
@@ -13,12 +14,18 @@ import { notificationsSchema } from "@/schemas/challengeSchemas";
 import { challengeNewFormSchema } from "@/schemas/challengeSchemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { createChallengeRequest } from "@/services/challenge";
+import { getCurrentUser } from "@/services/user/apiUserService";
+import { toast } from "@/hooks/use-toast";
+import CalendarIcon from "@/assets/icons/ic-deadline-date.svg";
 
 const FIELD_OPTIONS = challengesNewData.fieldOptions;
 const DOC_TYPE_OPTIONS = challengesNewData.docTypeOptions;
 
 export default function ChallengeApplyPage() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   useEffect(() => {
     setMounted(true);
@@ -32,11 +39,6 @@ export default function ChallengeApplyPage() {
     }
   }, []);
 
-  if (!mounted) {
-    return null;
-  }
-
-  const CalendarIcon = require("@/assets/icons/ic-deadline-date.svg").default;
   const {
     register,
     handleSubmit,
@@ -49,8 +51,83 @@ export default function ChallengeApplyPage() {
 
   const formData = watch();
 
-  const handleFormSubmit = (data) => {
-    console.log("Challenge apply:", data);
+  const mapDocTypeToApi = (value) => {
+    const map = {
+      공식문서: "OFFICIAL_DOCUMENT",
+      블로그: "BLOG",
+      레퍼런스: "REFERENCE",
+      아티클: "ARTICLE",
+    };
+    return map[value] || value;
+  };
+
+  const mapFieldToApi = (value) => {
+    const map = {
+      Career: "커리어",
+      "Modern JS": "모던JS",
+      Web: "프론트엔드",
+      "Next.js": "Next.js",
+      API: "API",
+    };
+    return map[value] || value;
+  };
+
+  const formatDeadlineToIso = (value) => {
+    if (!value) return null;
+    if (value.includes("-")) {
+      const [year, month, day] = value.split("-").map(Number);
+      if (!year || !month || !day) return null;
+      return new Date(year, month - 1, day, 23, 59, 59, 999).toISOString();
+    }
+    if (value.includes("/")) {
+      const [yy, mm, dd] = value.split("/").map(Number);
+      if (!yy || !mm || !dd) return null;
+      const year = yy + 2000;
+      return new Date(year, mm - 1, dd, 23, 59, 59, 999).toISOString();
+    }
+    return null;
+  };
+
+  if (!mounted) {
+    return null;
+  }
+
+  const handleFormSubmit = async (data) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const userResponse = await getCurrentUser();
+      const userId = userResponse?.user?.id;
+
+      const deadlineAt = formatDeadlineToIso(data.deadline);
+      if (!deadlineAt) {
+        throw new Error("마감일 형식이 올바르지 않습니다.");
+      }
+
+      const payload = {
+        userId,
+        title: data.title,
+        sourceUrl: data.link,
+        field: mapFieldToApi(data.field),
+        docType: mapDocTypeToApi(data.docType),
+        deadlineAt,
+        maxParticipants: data.participants,
+        content: data.content,
+      };
+      await createChallengeRequest(payload);
+      toast({
+        title: "신청 완료",
+        description: "챌린지 신청이 접수되었습니다.",
+      });
+      router.push("/challenges-my");
+    } catch (error) {
+      toast({
+        title: "신청 실패",
+        description: error.message || "잠시 후 다시 시도해주세요.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -105,7 +182,8 @@ export default function ChallengeApplyPage() {
 
             <Input
               label="마감일"
-              placeholder="YY/MM/DD"
+              type="date"
+              rightIconLabel="날짜 선택"
               value={formData.deadline || ""}
               onChange={(e) => setValue("deadline", e.target.value)}
               rightIcon={<CalendarIcon className="size-8" />}
@@ -133,7 +211,13 @@ export default function ChallengeApplyPage() {
               )}
             </div>
 
-            <Button fullWidth size="lg" type="submit" className="font-16-semibold">
+            <Button
+              fullWidth
+              size="lg"
+              type="submit"
+              className="font-16-semibold"
+              disabled={isSubmitting}
+            >
               신청하기
             </Button>
           </form>

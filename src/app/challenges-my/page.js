@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Container from "@/components/common/Container/Container";
 import Gnb from "@/components/common/GNB/Gnb";
@@ -10,9 +10,10 @@ import Sort from "@/components/common/Sort/Sort";
 import ChallengeCard from "@/components/challenge/ChallengeCard";
 import Pagination from "@/components/common/PageButton/Pagination/Pagination";
 import PlusIcon from "@/assets/icons/ic-plus-s.svg";
-import challengesMyData from "@/data/challenges-my.json";
 import notificationsData from "@/data/notifications.json";
-import { challengesMySchema, notificationsSchema } from "@/schemas/challengeSchemas";
+import { notificationsSchema } from "@/schemas/challengeSchemas";
+import { getCurrentUser } from "@/services/user/apiUserService";
+import { getChallenges, getChallengeRequests } from "@/services/challenge/apiChallengeService";
 
 const TAB_ITEMS = [
   { key: "participating", label: "참여중인 챌린지" },
@@ -25,7 +26,67 @@ const STATUS_CLASS_NAME = {
   "신청 거절": "bg-[#fff0f0] text-[var(--error)]",
   "신청 승인": "bg-[#dff0ff] text-[#2f80ed]",
   "챌린지 삭제": "bg-[#f3f4f6] text-[var(--gray-600)]",
+  "신청 취소": "bg-[#f3f4f6] text-[var(--gray-600)]",
 };
+
+const DOC_TYPE_LABEL_MAP = {
+  OFFICIAL_DOCUMENT: "공식문서",
+  BLOG: "블로그",
+};
+
+const DOC_TYPE_VARIANT_MAP = {
+  OFFICIAL_DOCUMENT: "category-doc",
+  BLOG: "category-blog",
+};
+
+const FIELD_VARIANT_MAP = {
+  프론트엔드: "type-web",
+  백엔드: "type-api",
+  커리어: "type-career",
+  "Next.js": "type-nextjs",
+  API: "type-api",
+  Career: "type-career",
+  "Modern.js": "type-modernjs",
+  Web: "type-web",
+};
+
+const REQUEST_STATUS_LABEL_MAP = {
+  PENDING: "승인 대기",
+  REJECTED: "신청 거절",
+  CANCELLED: "신청 취소",
+  APPROVED: "신청 승인",
+};
+
+const STATUS_ROUTE_MAP = {
+  "승인 대기": "pending",
+  "신청 거절": "rejected",
+  "신청 승인": "approved",
+  "챌린지 삭제": "deleted",
+};
+
+const APPLIED_SORT_OPTIONS = ["승인 대기", "신청 승인", "신청 거절", "신청 취소"];
+
+const formatDeadline = (isoString) => {
+  if (!isoString) return "";
+  const date = new Date(isoString);
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  return `${year}년 ${month}월 ${day}일 마감`;
+};
+
+const formatShortDate = (isoString) => {
+  if (!isoString) return "";
+  const date = new Date(isoString);
+  const year = String(date.getFullYear()).slice(-2);
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}/${month}/${day}`;
+};
+
+const getDocTypeLabel = (docType) => DOC_TYPE_LABEL_MAP[docType] || docType || "";
+const getDocTypeVariant = (docType) => DOC_TYPE_VARIANT_MAP[docType] || "category-doc";
+const getFieldVariant = (field) => FIELD_VARIANT_MAP[field] || "type-web";
 
 export default function MyChallengesPage() {
   const router = useRouter();
@@ -33,14 +94,12 @@ export default function MyChallengesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [applyStatus, setApplyStatus] = useState("");
   const [appliedPage, setAppliedPage] = useState(1);
-
-  const validatedChallengesMy = useMemo(() => {
-    try {
-      return challengesMySchema.parse(challengesMyData);
-    } catch {
-      return challengesMyData;
-    }
-  }, []);
+  const [userId, setUserId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [participatingChallenges, setParticipatingChallenges] = useState([]);
+  const [completedChallenges, setCompletedChallenges] = useState([]);
+  const [appliedChallenges, setAppliedChallenges] = useState([]);
 
   const validatedNotifications = useMemo(() => {
     try {
@@ -50,38 +109,133 @@ export default function MyChallengesPage() {
     }
   }, []);
 
-  const MOCK_MY_CHALLENGES = useMemo(() => {
-    return [
-      ...validatedChallengesMy.participating,
-      ...validatedChallengesMy.completed,
-    ];
-  }, [validatedChallengesMy]);
+  useEffect(() => {
+    let isActive = true;
+    const fetchUser = async () => {
+      try {
+        const response = await getCurrentUser();
+        if (!response?.user?.id) {
+          throw new Error("로그인이 필요합니다.");
+        }
+        if (isActive) {
+          setUserId(response.user.id);
+        }
+      } catch (error) {
+        if (isActive) {
+          setLoadError(error.message || "사용자 정보를 불러오지 못했습니다.");
+          setIsLoading(false);
+        }
+      }
+    };
+    fetchUser();
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
-  const MOCK_COMPLETED_LIST = useMemo(() => {
-    return validatedChallengesMy.applied;
-  }, [validatedChallengesMy]);
+  useEffect(() => {
+    if (!userId) return;
+    let isActive = true;
+
+    const mapChallengeToCard = (challenge, tab) => {
+      const participantCount = challenge?._count?.participants || 0;
+      const maxParticipants = challenge?.maxParticipants || 0;
+      const isFull = maxParticipants > 0 && participantCount >= maxParticipants;
+      const statusText = tab === "completed"
+        ? "챌린지가 마감되었어요"
+        : isFull
+          ? "모집이 완료된 상태에요"
+          : "";
+      return {
+        id: challenge.id,
+        tab,
+        title: challenge.title,
+        tags: [
+          {
+            text: challenge.field,
+            variant: getFieldVariant(challenge.field),
+          },
+          {
+            text: getDocTypeLabel(challenge.docType),
+            variant: getDocTypeVariant(challenge.docType),
+          },
+        ],
+        deadline: formatDeadline(challenge.deadlineAt),
+        participants: `${participantCount}/${maxParticipants} ${isFull ? "참여 완료" : "참여중"}`,
+        statusText: statusText || undefined,
+        isClosed: tab === "completed",
+      };
+    };
+
+    const mapRequestToRow = (request) => ({
+      id: request.id,
+      field: request.field,
+      docType: getDocTypeLabel(request.docType),
+      title: request.title,
+      capacity: request.maxParticipants,
+      appliedAt: formatShortDate(request.createdAt),
+      deadline: formatShortDate(request.deadlineAt),
+      status: REQUEST_STATUS_LABEL_MAP[request.requestStatus] || request.requestStatus,
+    });
+
+    const fetchData = async () => {
+      setIsLoading(true);
+      setLoadError("");
+      try {
+        const [inProgress, closed, requests] = await Promise.all([
+          getChallenges({ userId, challengeStatus: "IN_PROGRESS" }),
+          getChallenges({ userId, challengeStatus: "CLOSED" }),
+          getChallengeRequests({ userId }),
+        ]);
+
+        if (!isActive) return;
+
+        setParticipatingChallenges(
+          (inProgress || []).map((challenge) => mapChallengeToCard(challenge, "participating"))
+        );
+        setCompletedChallenges(
+          (closed || []).map((challenge) => mapChallengeToCard(challenge, "completed"))
+        );
+        setAppliedChallenges((requests || []).map(mapRequestToRow));
+      } catch (error) {
+        if (isActive) {
+          setLoadError(error.message || "데이터를 불러오지 못했습니다.");
+        }
+      } finally {
+        if (isActive) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+    return () => {
+      isActive = false;
+    };
+  }, [userId]);
 
   const filteredChallenges = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
-    return MOCK_MY_CHALLENGES.filter((challenge) => {
-      const matchesTab = challenge.tab === activeTab;
+    const targetList =
+      activeTab === "participating" ? participatingChallenges : completedChallenges;
+    return targetList.filter((challenge) => {
       const matchesSearch = normalizedQuery
         ? challenge.title.toLowerCase().includes(normalizedQuery)
         : true;
-      return matchesTab && matchesSearch;
+      return matchesSearch;
     });
-  }, [activeTab, searchQuery, MOCK_MY_CHALLENGES]);
+  }, [activeTab, searchQuery, participatingChallenges, completedChallenges]);
 
   const appliedRows = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
-    return MOCK_COMPLETED_LIST.filter((item) => {
+    return appliedChallenges.filter((item) => {
       const matchesSearch = normalizedQuery
         ? item.title.toLowerCase().includes(normalizedQuery)
         : true;
       const matchesStatus = applyStatus ? item.status === applyStatus : true;
       return matchesSearch && matchesStatus;
     });
-  }, [searchQuery, applyStatus, MOCK_COMPLETED_LIST]);
+  }, [searchQuery, applyStatus, appliedChallenges]);
 
   const appliedPageSize = 10;
   const appliedTotalPages = Math.max(1, Math.ceil(appliedRows.length / appliedPageSize));
@@ -90,14 +244,12 @@ export default function MyChallengesPage() {
     return appliedRows.slice(start, start + appliedPageSize);
   }, [appliedPage, appliedRows]);
 
+  useEffect(() => {
+    setAppliedPage(1);
+  }, [applyStatus, searchQuery]);
+
   const handleAppliedRowClick = (status, id) => {
-    const statusRouteMap = {
-      "승인 대기": "pending",
-      "신청 거절": "rejected",
-      "신청 승인": "approved",
-      "챌린지 삭제": "deleted",
-    };
-    const mappedStatus = statusRouteMap[status];
+    const mappedStatus = STATUS_ROUTE_MAP[status];
     if (mappedStatus && id) {
       router.push(`/challenges-status/${mappedStatus}/${id}`);
     }
@@ -137,7 +289,17 @@ export default function MyChallengesPage() {
           ) : null}
         </div>
 
-        {activeTab === "applied" ? (
+        {loadError ? (
+          <div className="flex min-h-[420px] items-center justify-center text-center">
+            <p className="font-16-regular text-[var(--error)]">{loadError}</p>
+          </div>
+        ) : isLoading ? (
+          <div className="flex min-h-[420px] items-center justify-center text-center">
+            <p className="font-16-regular text-[var(--gray-500)]">
+              데이터를 불러오는 중이에요.
+            </p>
+          </div>
+        ) : activeTab === "applied" ? (
           <div className="flex flex-col gap-5 md:gap-2">
             <div className="flex w-full flex-row items-center gap-3">
               <Search
@@ -146,7 +308,7 @@ export default function MyChallengesPage() {
                 onSearch={setSearchQuery}
               />
               <Sort
-                options={["승인 대기", "승인", "거절"]}
+                options={APPLIED_SORT_OPTIONS}
                 value={applyStatus}
                 onChange={setApplyStatus}
                 placeholder="승인 대기"
@@ -172,7 +334,7 @@ export default function MyChallengesPage() {
                   <div
                     key={item.id}
                     className={`grid grid-cols-[72px_96px_88px_minmax(280px,1fr)_96px_96px_96px_96px] items-center gap-0 px-4 py-3 ${
-                      ["신청 거절", "승인 대기", "신청 승인", "챌린지 삭제"].includes(item.status)
+                      STATUS_ROUTE_MAP[item.status]
                         ? "cursor-pointer hover:bg-[var(--gray-50)]"
                         : ""
                     }`}
@@ -182,10 +344,10 @@ export default function MyChallengesPage() {
                         {item.id}
                       </span>
                       <span className="font-14-regular text-center text-[var(--gray-700)]">
-                        {item.docType}
+                        {item.field}
                       </span>
                       <span className="font-14-regular text-center text-[var(--gray-700)]">
-                        {item.category}
+                        {item.docType}
                       </span>
                       <span className="font-14-regular truncate text-[var(--gray-900)]">
                         {item.title}
