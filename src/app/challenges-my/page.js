@@ -308,6 +308,14 @@ export default function MyChallengesPage() {
   const handleAdminDeleteSubmit = async (reason) => {
     const targetId = deleteTargetId;
     if (!targetId) return;
+    const trimmedReason = typeof reason === "string" ? reason.trim() : "";
+    if (!trimmedReason) {
+      toast({
+        title: "삭제 실패",
+        description: "삭제 사유를 입력해주세요.",
+      });
+      return;
+    }
     try {
       await deleteChallengeAsAdmin(targetId, reason);
       setParticipatingChallenges((prev) => prev.filter((item) => item.id !== targetId));

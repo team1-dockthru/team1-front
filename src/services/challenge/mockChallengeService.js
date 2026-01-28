@@ -80,7 +80,8 @@ export async function deleteChallenge(challengeId) {
 }
 
 export async function deleteChallengeAsAdmin(challengeId, reason) {
-  console.log('[Mock] deleteChallengeAsAdmin 호출:', challengeId, reason);
+  const trimmedReason = typeof reason === 'string' ? reason.trim() : '';
+  console.log('[Mock] deleteChallengeAsAdmin 호출:', challengeId, trimmedReason);
   await new Promise((resolve) => setTimeout(resolve, 300));
   return {
     success: true,

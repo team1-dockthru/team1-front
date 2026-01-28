@@ -90,9 +90,14 @@ export async function createChallengeRequest(payload) {
 }
 
 export async function deleteChallengeAsAdmin(challengeId, reason) {
+  const trimmedReason = typeof reason === "string" ? reason.trim() : "";
+  const payload =
+    trimmedReason
+      ? { adminReason: trimmedReason, reason: trimmedReason }
+      : undefined;
   return request(`/challenges/${challengeId}/admin/delete`, {
     method: "DELETE",
-    body: reason ? { reason } : undefined,
+    body: payload,
   });
 }
 

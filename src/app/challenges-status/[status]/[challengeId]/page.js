@@ -40,10 +40,6 @@ const STATUS_CONFIG = {
     bannerText: "신청이 거절되었습니다.",
     bannerClassName: "bg-[#fff1f1] text-[var(--error)]",
     showReason: true,
-    reasonTitle: "신청 거절 사유",
-    reasonBody:
-      "독스루는 개발 문서 번역 플랫폼으로, 다른 종류의 번역 챌린지를 개최할 수 없음을 알려드립니다. 감사합니다.",
-    reasonMeta: "독스루 운영진 | 24/02/24 16:38",
   },
   approved: {
     bannerText: "신청이 승인되었습니다.",
@@ -53,10 +49,6 @@ const STATUS_CONFIG = {
     bannerText: "삭제된 챌린지입니다.",
     bannerClassName: "bg-[#6b6b6b] text-white",
     showReason: true,
-    reasonTitle: "삭제 사유",
-    reasonBody:
-      "독스루는 개발 문서 번역 플랫폼으로, 폭력성과 관련된 내용을 포함할 수 없음을 안내드립니다. 감사합니다.",
-    reasonMeta: "독스루 운영진 | 24/02/24 16:38",
   },
 };
 
@@ -107,6 +99,17 @@ const formatDeadline = (isoString) => {
   return `${year}년 ${month}월 ${day}일 마감`;
 };
 
+const formatReasonMeta = (isoString) => {
+  if (!isoString) return "";
+  const date = new Date(isoString);
+  const year = String(date.getFullYear()).slice(-2);
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${year}/${month}/${day} ${hours}:${minutes}`;
+};
+
 const normalizeSourceUrl = (url) => {
   if (!url) return "";
   if (/^https?:\/\//i.test(url)) return url;
@@ -118,17 +121,29 @@ export default function ChallengeStatusPage({ params }) {
   const router = useRouter();
   const { status, challengeId } = use(params);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-  const [challengeDetail, setChallengeDetail] = useState(MOCK_CHALLENGE_DETAIL);
+  const [challengeDetail, setChallengeDetail] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentStatus, setCurrentStatus] = useState(status);
   const [isProcessModalOpen, setIsProcessModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDetailLoading, setIsDetailLoading] = useState(true);
+  const [requestUserId, setRequestUserId] = useState(null);
+  const [reasonInfo, setReasonInfo] = useState({
+    title: "",
+    body: "",
+    meta: "",
+  });
 
   const isAdmin =
     String(currentUser?.role || "").toLowerCase() === "admin" ||
     currentUser?.role === "ADMIN";
 
   const config = STATUS_CONFIG[currentStatus] || STATUS_CONFIG.pending;
+  const canCancel =
+    !isAdmin &&
+    config.showCancel &&
+    requestUserId &&
+    Number(requestUserId) === Number(currentUser?.id);
 
   useEffect(() => {
     let isActive = true;
@@ -152,6 +167,7 @@ export default function ChallengeStatusPage({ params }) {
     let isActive = true;
 
     const fetchDetail = async () => {
+      setIsDetailLoading(true);
       try {
         const data = await getChallengeRequestDetail(challengeId);
         if (!isActive || !data) return;
@@ -167,7 +183,26 @@ export default function ChallengeStatusPage({ params }) {
           data.originUrl ||
           "";
 
+        const rejectionReason =
+          data.adminReason ||
+          data.rejectReason ||
+          data.rejectionReason ||
+          data.reason ||
+          "";
+        const reasonMeta = data.processedAt ? formatReasonMeta(data.processedAt) : "";
+        const requestStatus = String(data.requestStatus || "").toUpperCase();
+        const isRejected = requestStatus === "REJECTED" || currentStatus === "rejected";
+        const isDeleted = currentStatus === "deleted";
+
+        setReasonInfo({
+          title: isDeleted ? "삭제 사유" : "신청 거절 사유",
+          body: rejectionReason,
+          meta: reasonMeta ? `독스루 운영진 | ${reasonMeta}` : "",
+        });
+        setRequestUserId(data.userId || null);
+
         setChallengeDetail({
+          requestId: data.id || challengeId,
           title: data.title || MOCK_CHALLENGE_DETAIL.title,
           description: data.content || "",
           deadline: formatDeadline(data.deadlineAt),
@@ -188,7 +223,16 @@ export default function ChallengeStatusPage({ params }) {
         });
       } catch {
         if (!isActive) return;
+        setReasonInfo({
+          title: "신청 거절 사유",
+          body: "",
+          meta: "",
+        });
         setChallengeDetail(MOCK_CHALLENGE_DETAIL);
+      } finally {
+        if (isActive) {
+          setIsDetailLoading(false);
+        }
       }
     };
 
@@ -225,8 +269,13 @@ export default function ChallengeStatusPage({ params }) {
     if (!challengeId || isProcessing) return;
     setIsProcessing(true);
     try {
-      await processChallengeRequest(challengeId, { status: "REJECTED", reason });
+      await processChallengeRequest(challengeId, { status: "REJECTED", adminReason: reason });
       setCurrentStatus("rejected");
+      setReasonInfo({
+        title: "신청 거절 사유",
+        body: reason,
+        meta: `독스루 운영진 | ${formatReasonMeta(new Date().toISOString())}`,
+      });
       toast({
         title: "거절 완료",
         description: "챌린지 신청이 거절되었습니다.",
@@ -253,14 +302,48 @@ export default function ChallengeStatusPage({ params }) {
     window.open(challengeDetail.sourceUrl, "_blank", "noopener,noreferrer");
   };
 
+  if (isDetailLoading || !challengeDetail) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Gnb
+          notifications={MOCK_NOTIFICATIONS}
+          isLoggedIn={Boolean(currentUser)}
+          role={isAdmin ? "admin" : "member"}
+          useUserDropdown
+          user={
+            currentUser
+              ? {
+                  name: currentUser.nickname || currentUser.name || "사용자",
+                  role: isAdmin ? "관리자" : "일반",
+                }
+              : { name: "사용자", role: "일반" }
+          }
+          onMyChallenge={() => router.push("/challenges-my")}
+        />
+        <Container className="py-10 md:py-[60px]">
+          <div className="flex min-h-[420px] items-center justify-center text-center">
+            <p className="font-16-regular text-[var(--gray-500)]">
+              데이터를 불러오는 중이에요.
+            </p>
+          </div>
+        </Container>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[var(--gray-50)]">
+    <div className="min-h-screen bg-white">
       <Gnb
         notifications={MOCK_NOTIFICATIONS}
+        isLoggedIn={Boolean(currentUser)}
+        role={isAdmin ? "admin" : "member"}
         useUserDropdown
         user={
           currentUser
-            ? { name: currentUser.nickname || currentUser.name || "사용자", role: "일반" }
+            ? {
+                name: currentUser.nickname || currentUser.name || "사용자",
+                role: isAdmin ? "관리자" : "일반",
+              }
             : { name: "사용자", role: "일반" }
         }
         onMyChallenge={() => router.push("/challenges-my")}
@@ -271,12 +354,42 @@ export default function ChallengeStatusPage({ params }) {
             {config.bannerText}
           </div>
 
+          {config.showReason ? (
+            <div className="rounded-2xl border border-[var(--gray-200)] bg-[var(--gray-50)] p-6">
+              <div className="flex flex-col gap-2 text-center">
+                <div className="font-14-semibold text-[var(--gray-900)]">
+                  {reasonInfo.title}
+                </div>
+                <p className="font-16-regular text-[var(--gray-700)]">
+                  {reasonInfo.body || "사유가 입력되지 않았습니다."}
+                </p>
+              </div>
+              {reasonInfo.meta ? (
+                <div className="mt-3 flex justify-end gap-2 text-right">
+                  <span className="font-14-regular text-[var(--gray-700)]">
+                    독스루 운영진
+                  </span>
+                  <span className="font-14-regular text-[var(--gray-500)]">
+                    {reasonInfo.meta.replace("독스루 운영진 | ", "")}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
           <div className="flex flex-col gap-3">
             <div className="flex items-start justify-between gap-4">
-              <h1 className="font-20-bold text-[var(--gray-900)]">
-                {challengeDetail.title}
-              </h1>
-              {config.showCancel ? (
+              <div className="flex flex-col gap-1">
+                {isAdmin ? (
+                  <p className="font-14-regular text-[var(--gray-500)]">
+                    No. {challengeDetail.requestId || challengeId}
+                  </p>
+                ) : null}
+                <h1 className="font-20-bold text-[var(--gray-900)]">
+                  {challengeDetail.title}
+                </h1>
+              </div>
+              {canCancel ? (
                 <button
                   type="button"
                   onClick={() => setIsCancelModalOpen(true)}
@@ -333,20 +446,6 @@ export default function ChallengeStatusPage({ params }) {
             </div>
             <div className="mt-4 border-t border-[var(--gray-200)]" />
           </div>
-
-          {config.showReason ? (
-            <div className="rounded-2xl border border-[var(--gray-200)] bg-white p-6">
-              <div className="mb-2 font-16-semibold text-[var(--gray-900)]">
-                {config.reasonTitle}
-              </div>
-              <p className="font-14-regular text-[var(--gray-700)]">
-                {config.reasonBody}
-              </p>
-              <p className="mt-3 font-12-regular text-[var(--gray-500)]">
-                {config.reasonMeta}
-              </p>
-            </div>
-          ) : null}
 
           {isAdmin && currentStatus === "pending" ? (
             <AdminDecisionActions

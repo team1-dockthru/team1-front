@@ -37,9 +37,9 @@ export default function ChallengeCard({
         className
       )}
     >
-      <div className="flex flex-col p-5 md:p-6">
+      <div className="relative flex flex-col p-5 md:p-6">
         {/* Upper Section: Status Badge (Optional) + Admin Menu */}
-        <div className="mb-3 flex items-center justify-between">
+        <div className={cn('flex items-center', statusText ? 'mb-3' : 'mb-0')}>
           {statusText ? (
             <div className={cn(
               "flex h-8 w-fit items-center justify-center gap-1.5 rounded-full px-3 font-12-medium shrink-0",
@@ -54,39 +54,37 @@ export default function ChallengeCard({
               )}
               <span className="leading-none whitespace-nowrap">{statusText}</span>
             </div>
-          ) : (
-            <span />
-          )}
-
-          {isAdmin ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className="inline-flex size-8 items-center justify-center rounded-full hover:bg-[var(--gray-50)]"
-                aria-label="챌린지 관리"
-              >
-                <MeatballsIcon className="size-5 text-[var(--gray-400)]" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-[120px] border-[#d4d4d4] bg-white p-0"
-              >
-                <DropdownMenuItem
-                  onClick={onEdit}
-                  className="cursor-pointer justify-center py-3 text-center text-sm font-medium text-[#737373] focus:text-[#262626]"
-                >
-                  수정하기
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="m-0 bg-[#d4d4d4]" />
-                <DropdownMenuItem
-                  onClick={onDelete}
-                  className="cursor-pointer justify-center py-3 text-center text-sm font-medium text-[#737373] focus:text-[#ef4444]"
-                >
-                  삭제하기
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           ) : null}
         </div>
+
+        {isAdmin ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="absolute right-5 top-5 inline-flex size-8 items-center justify-center rounded-full hover:bg-[var(--gray-50)] md:right-6 md:top-6"
+              aria-label="챌린지 관리"
+            >
+              <MeatballsIcon className="size-5 text-[var(--gray-400)]" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-[120px] border-[#d4d4d4] bg-white p-0"
+            >
+              <DropdownMenuItem
+                onClick={onEdit}
+                className="cursor-pointer justify-center py-3 text-center text-sm font-medium text-[#737373] focus:text-[#262626]"
+              >
+                수정하기
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="m-0 bg-[#d4d4d4]" />
+              <DropdownMenuItem
+                onClick={onDelete}
+                className="cursor-pointer justify-center py-3 text-center text-sm font-medium text-[#737373] focus:text-[#ef4444]"
+              >
+                삭제하기
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
 
         {/* Title */}
         <h3 className="mb-4 font-18-bold leading-7 text-[var(--gray-900)] md:font-20-bold">
