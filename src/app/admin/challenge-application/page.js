@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import AdminHeader from '@/components/admin/AdminHeader';
 import Container from '@/components/common/Container/Container';
 import Search from '@/components/common/Search/Search';
@@ -58,6 +59,7 @@ function getStatusStyles(status) {
 }
 
 export default function ChallengeApplicationPage() {
+  const router = useRouter();
   const clearToken = useAuthStore((state) => state.clearToken);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortValue, setSortValue] = useState('승인 대기');
@@ -202,10 +204,20 @@ export default function ChallengeApplicationPage() {
                 ) : (
                   paginatedChallenges.map((challenge) => {
                     const statusStyles = getStatusStyles(challenge.status);
+                    const statusRouteMap = {
+                      pending: 'pending',
+                      approved: 'approved',
+                      rejected: 'rejected',
+                      deleted: 'deleted',
+                    };
                     return (
                       <tr
                         key={challenge.id}
-                        className="border-b border-[var(--gray-200)] bg-white hover:bg-[var(--gray-50)] transition-colors"
+                        className="border-b border-[var(--gray-200)] bg-white hover:bg-[var(--gray-50)] transition-colors cursor-pointer"
+                        onClick={() => {
+                          const mappedStatus = statusRouteMap[challenge.status] || 'pending';
+                          router.push(`/challenges-status/${mappedStatus}/${challenge.id}`);
+                        }}
                       >
                         <td className="px-4 py-4 font-14-regular text-[var(--gray-900)]">
                           {challenge.id}

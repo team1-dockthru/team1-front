@@ -15,6 +15,9 @@ export default function RejectModal({
   isOpen, 
   onClose, 
   onSubmit, 
+  title = '거절 사유',
+  placeholder = '거절사유를 입력해주세요',
+  submitLabel = '전송',
   forceMobile = false // 스토리북 테스트용 강제 모바일 모드
 }) {
   const [reason, setReason] = useState('');
@@ -60,7 +63,7 @@ export default function RejectModal({
             "font-20-bold text-[var(--gray-900)]",
             isDesktop && "sm:font-24-bold"
           )}>
-            거절 사유
+            {title}
           </h2>
           <button 
             type="button" 
@@ -84,7 +87,7 @@ export default function RejectModal({
             <TextBox
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="거절사유를 입력해주세요"
+              placeholder={placeholder}
               className="reject-box"
               style={{ height: '219px' }}
             />
@@ -104,7 +107,7 @@ export default function RejectModal({
                "bg-[#111111] font-16-bold text-white transition-colors hover:bg-black/80"
             )}
           >
-            전송
+            {submitLabel}
           </button>
         </div>
       </div>
