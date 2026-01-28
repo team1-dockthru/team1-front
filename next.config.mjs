@@ -34,13 +34,13 @@ const nextConfig = {
 
     // 2. SVGR 로더 추가 - issuer 조건 없이
     config.module.rules.push({
-      test: /\.svg$/,
+      test: /\.svg$/i,
+      issuer: /\.[jt]sx?$/,
       use: ['@svgr/webpack'],
     });
 
     return config;
   },
-  turbopack: {},
 };
 
 export default nextConfig;

@@ -97,6 +97,7 @@ export default function MyChallengesPage() {
   const [userId, setUserId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [appliedLoadError, setAppliedLoadError] = useState("");
   const [participatingChallenges, setParticipatingChallenges] = useState([]);
   const [completedChallenges, setCompletedChallenges] = useState([]);
   const [appliedChallenges, setAppliedChallenges] = useState([]);
@@ -181,11 +182,11 @@ export default function MyChallengesPage() {
     const fetchData = async () => {
       setIsLoading(true);
       setLoadError("");
+      setAppliedLoadError("");
       try {
-        const [inProgress, closed, requests] = await Promise.all([
+        const [inProgress, closed] = await Promise.all([
           getChallenges({ userId, challengeStatus: "IN_PROGRESS" }),
           getChallenges({ userId, challengeStatus: "CLOSED" }),
-          getChallengeRequests({ userId }),
         ]);
 
         if (!isActive) return;
@@ -196,10 +197,20 @@ export default function MyChallengesPage() {
         setCompletedChallenges(
           (closed || []).map((challenge) => mapChallengeToCard(challenge, "completed"))
         );
-        setAppliedChallenges((requests || []).map(mapRequestToRow));
       } catch (error) {
         if (isActive) {
           setLoadError(error.message || "데이터를 불러오지 못했습니다.");
+        }
+      }
+
+      try {
+        const requests = await getChallengeRequests();
+        if (!isActive) return;
+        setAppliedChallenges((requests || []).map(mapRequestToRow));
+      } catch (error) {
+        if (isActive) {
+          setAppliedChallenges([]);
+          setAppliedLoadError(error.message || "신청 목록을 불러오지 못했습니다.");
         }
       } finally {
         if (isActive) {
@@ -317,7 +328,11 @@ export default function MyChallengesPage() {
               />
             </div>
 
-            {appliedRows.length > 0 ? (
+            {appliedLoadError ? (
+              <div className="flex min-h-[420px] items-center justify-center text-center">
+                <p className="font-16-regular text-[var(--error)]">{appliedLoadError}</p>
+              </div>
+            ) : appliedRows.length > 0 ? (
               <>
                 <div className="grid grid-cols-[72px_96px_88px_minmax(280px,1fr)_96px_96px_96px_96px] items-center gap-0 rounded-[12px] bg-[var(--gray-900)] px-4 pt-[9px] pb-[11px] text-white">
                   {["No.", "분야", "카테고리", "챌린지 제목", "모집 인원", "신청일", "마감 기한", "상태"].map(
