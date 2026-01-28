@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { Suspense, useMemo, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Container from "@/components/common/Container/Container";
 import Gnb from "@/components/common/GNB/Gnb";
@@ -22,7 +22,7 @@ import CalendarIcon from "@/assets/icons/ic-deadline-date.svg";
 const FIELD_OPTIONS = challengesNewData.fieldOptions;
 const DOC_TYPE_OPTIONS = challengesNewData.docTypeOptions;
 
-export default function ChallengeApplyPage() {
+function ChallengeApplyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
@@ -295,5 +295,13 @@ export default function ChallengeApplyPage() {
         </div>
       </Container>
     </div>
+  );
+}
+
+export default function ChallengeApplyPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[var(--gray-50)]" />}>
+      <ChallengeApplyContent />
+    </Suspense>
   );
 }
