@@ -2,7 +2,74 @@
 // 실제 백엔드 API 호출
 
 // 백엔드 API URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://team1-back-1.onrender.com";
+
+const getStoredToken = () => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("auth-token") || null;
+  }
+  return null;
+};
+
+async function request(path, { method = "GET", body } = {}) {
+  const token = getStoredToken();
+  const headers = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (response.ok) {
+    return response.json();
+  }
+
+  let errorMessage = "챌린지 요청 실패";
+  try {
+    const errorData = await response.json();
+    if (errorData?.message) {
+      errorMessage = errorData.message;
+    }
+  } catch {
+    // ignore JSON parse errors
+  }
+  throw new Error(errorMessage);
+}
+
+function buildQuery(params = {}) {
+  const entries = Object.entries(params).filter(
+    ([, value]) => value !== undefined && value !== null && value !== ""
+  );
+  if (entries.length === 0) {
+    return "";
+  }
+  const searchParams = new URLSearchParams(entries);
+  return `?${searchParams.toString()}`;
+}
+
+export async function getChallenges({ userId, challengeStatus, field, docType } = {}) {
+  const query = buildQuery({ userId, challengeStatus, field, docType });
+  const data = await request(`/challenges${query}`);
+  return data?.data || [];
+}
+
+export async function getChallengeRequests({ userId, requestStatus } = {}) {
+  const query = buildQuery({ userId, requestStatus });
+  const data = await request(`/challenges/requests${query}`);
+  return data?.data || [];
+}
+
+export async function createChallengeRequest(payload) {
+  return request("/challenges/requests", {
+    method: "POST",
+    body: payload,
+  });
+}
 
 /**
  * 챌린지 상세 조회

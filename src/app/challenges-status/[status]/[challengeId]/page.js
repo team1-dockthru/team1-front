@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import Container from "@/components/common/Container/Container";
 import Gnb from "@/components/common/GNB/Gnb";
@@ -69,7 +69,7 @@ const MOCK_CHALLENGE_DETAIL = {
 
 export default function ChallengeStatusPage({ params }) {
   const router = useRouter();
-  const { status, challengeId } = params;
+  const { status, challengeId } = use(params);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending;

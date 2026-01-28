@@ -13,4 +13,7 @@ export const {
   joinChallenge,
   updateChallenge,
   deleteChallenge,
+  createChallengeRequest,
+  getChallenges,
+  getChallengeRequests,
 } = challengeService;

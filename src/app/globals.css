@@ -305,3 +305,15 @@ body {
     color: hsl(var(--foreground));
   }
 }
+
+/* Hide native date picker icon so custom icon can be used */
+.hide-native-date-icon::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  display: none;
+}
+.hide-native-date-icon::-webkit-inner-spin-button {
+  display: none;
+}
+.hide-native-date-icon {
+  -webkit-appearance: none;
+}

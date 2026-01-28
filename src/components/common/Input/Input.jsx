@@ -1,7 +1,7 @@
 // src/components/common/Input/Input.jsx
 'use client';
 
-import { useId, useState, forwardRef } from 'react';
+import { useId, useRef, useState, forwardRef } from 'react';
 
 import { cn } from '@/lib/utils';
 import { Input as UiInput } from '@/components/ui/input';
@@ -15,6 +15,8 @@ const Input = forwardRef(function Input(
     type = 'text',
     errorText,
     rightIcon, // password가 아닐 때 우측 아이콘(예: 달력)
+    rightIconLabel = '아이콘 버튼',
+    onRightIconClick,
     className = '',
     ...props
   },
@@ -22,9 +24,32 @@ const Input = forwardRef(function Input(
 ) {
   const id = useId();
   const [showPassword, setShowPassword] = useState(false);
+  const inputRef = useRef(null);
 
   const isPassword = type === 'password';
   const actualType = isPassword ? (showPassword ? 'text' : 'password') : type;
+  const setRefs = (node) => {
+    inputRef.current = node;
+    if (typeof ref === 'function') {
+      ref(node);
+    } else if (ref) {
+      ref.current = node;
+    }
+  };
+
+  const handleRightIconClick = () => {
+    if (onRightIconClick) {
+      onRightIconClick();
+      return;
+    }
+    const el = inputRef.current;
+    if (!el) return;
+    if (typeof el.showPicker === 'function') {
+      el.showPicker();
+    } else {
+      el.focus();
+    }
+  };
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
@@ -42,11 +67,12 @@ const Input = forwardRef(function Input(
       >
         <UiInput
           id={id}
-          ref={ref}
+          ref={setRefs}
           className={cn(
             'font-14-regular pr-14 h-[48px] md:h-14',
             // wrapper에서 border를 잡기 때문에 input 자체 border는 제거
-            'border-0 rounded-[12px] focus-visible:ring-0 focus-visible:ring-offset-0'
+            'border-0 rounded-[12px] focus-visible:ring-0 focus-visible:ring-offset-0',
+            actualType === 'date' && 'hide-native-date-icon'
           )}
           value={value}
           onChange={onChange}
@@ -70,9 +96,14 @@ const Input = forwardRef(function Input(
             />
           </button>
         ) : rightIcon ? (
-          <span className="absolute top-1/2 right-5 inline-flex size-8 -translate-y-1/2 items-center justify-center">
+          <button
+            type="button"
+            className="absolute top-1/2 right-5 inline-flex size-8 -translate-y-1/2 items-center justify-center"
+            aria-label={rightIconLabel}
+            onClick={handleRightIconClick}
+          >
             {rightIcon}
-          </span>
+          </button>
         ) : null}
       </div>
 

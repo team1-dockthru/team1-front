@@ -87,7 +87,9 @@ export const challengeNewFormSchema = z.object({
   link: z.string().url('올바른 URL을 입력해주세요'),
   field: z.string().min(1, '분야를 선택해주세요'),
   docType: z.string().min(1, '문서 타입을 선택해주세요'),
-  deadline: z.string().regex(/^\d{2}\/\d{2}\/\d{2}$/, 'YY/MM/DD 형식으로 입력해주세요'),
+  deadline: z
+    .string()
+    .regex(/^\d{2}\/\d{2}\/\d{2}$|^\d{4}-\d{2}-\d{2}$/, 'YY/MM/DD 또는 YYYY-MM-DD 형식으로 입력해주세요'),
   participants: z.string().regex(/^\d+$/, '숫자만 입력해주세요').transform(Number),
   content: z.string().min(1, '내용을 입력해주세요'),
 });
