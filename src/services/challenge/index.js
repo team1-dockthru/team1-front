@@ -19,4 +19,5 @@ export const {
   createChallengeRequest,
   getChallenges,
   getChallengeRequests,
+  getChallengeRequestDetail,
 } = challengeService;

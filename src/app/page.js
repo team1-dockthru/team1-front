@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Gnb from "@/components/common/GNB/Gnb";
 import Button from "@/components/common/Button/Button";
@@ -22,18 +23,23 @@ import Logo from "@/assets/icons/ic-logo.svg";
 
 export default function Home() {
   const [user, setUser] = useState({ isLoggedIn: false, role: "guest" });
+  const router = useRouter();
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const userData = await getCurrentUser();
+        if (userData?.isLoggedIn && userData?.role === "member") {
+          router.replace("/challenges-show");
+          return;
+        }
         setUser(userData);
       } catch {
         setUser({ isLoggedIn: false, role: "guest" });
       }
     };
     fetchUser();
-  }, []);
+  }, [router]);
   return (
     <div className="min-h-screen bg-[var(--gray-50)] text-[var(--gray-900)]">
       <Gnb

@@ -11,10 +11,8 @@ import ChallengeCard from "@/components/challenge/ChallengeCard";
 import Pagination from "@/components/common/PageButton/Pagination/Pagination";
 import RejectModal from "@/components/common/RejectModal/RejectModal";
 import PlusIcon from "@/assets/icons/ic-plus-s.svg";
-import notificationsData from "@/data/notifications.json";
-import { notificationsSchema } from "@/schemas/challengeSchemas";
 import { getCurrentUser } from "@/services/user/apiUserService";
-import { getChallenges, getChallengeRequests, deleteChallenge, deleteChallengeAsAdmin } from "@/services/challenge";
+import { getChallenges, getChallengeRequests, getChallengeRequestDetail, deleteChallenge, deleteChallengeAsAdmin } from "@/services/challenge";
 import { toast } from "@/hooks/use-toast";
 
 const TAB_ITEMS = [
@@ -99,6 +97,9 @@ export default function MyChallengesPage() {
   const [userId, setUserId] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isParticipatingLoading, setIsParticipatingLoading] = useState(true);
+  const [isCompletedLoading, setIsCompletedLoading] = useState(true);
+  const [isAppliedLoading, setIsAppliedLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [appliedLoadError, setAppliedLoadError] = useState("");
   const [participatingChallenges, setParticipatingChallenges] = useState([]);
@@ -106,14 +107,6 @@ export default function MyChallengesPage() {
   const [appliedChallenges, setAppliedChallenges] = useState([]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
-
-  const validatedNotifications = useMemo(() => {
-    try {
-      return notificationsSchema.parse(notificationsData);
-    } catch {
-      return notificationsData;
-    }
-  }, []);
 
   useEffect(() => {
     let isActive = true;
@@ -184,45 +177,98 @@ export default function MyChallengesPage() {
       deadline: formatShortDate(request.deadlineAt),
       status: REQUEST_STATUS_LABEL_MAP[request.requestStatus] || request.requestStatus,
     });
+    const mapRequestToChallengeCard = (request) => {
+      const linkedChallengeId =
+        request?.challengeId ||
+        request?.challenge_id ||
+        request?.challenge?.id ||
+        request?.challenges?.[0]?.id ||
+        null;
+      const maxParticipants = request?.maxParticipants || 0;
+      return {
+        id: linkedChallengeId ? linkedChallengeId : `request-${request.id}`,
+        linkedChallengeId,
+        requestId: request?.id || null,
+        tab: "participating",
+        title: request.title,
+        tags: [
+          {
+            text: request.field,
+            variant: getFieldVariant(request.field),
+          },
+          {
+            text: getDocTypeLabel(request.docType),
+            variant: getDocTypeVariant(request.docType),
+          },
+        ],
+        deadline: formatDeadline(request.deadlineAt),
+        participants: `0/${maxParticipants} 참여중`,
+        statusText: undefined,
+        isClosed: false,
+      };
+    };
 
     const fetchData = async () => {
       setIsLoading(true);
+      setIsParticipatingLoading(true);
+      setIsCompletedLoading(true);
+      setIsAppliedLoading(true);
       setLoadError("");
       setAppliedLoadError("");
-      try {
-        const [inProgress, closed] = await Promise.all([
-          getChallenges({ userId, challengeStatus: "IN_PROGRESS" }),
-          getChallenges({ userId, challengeStatus: "CLOSED" }),
-        ]);
 
-        if (!isActive) return;
+      const [inProgressResult, closedResult, requestsResult] = await Promise.allSettled([
+        getChallenges({ userId, challengeStatus: "IN_PROGRESS" }),
+        getChallenges({ userId, challengeStatus: "CLOSED" }),
+        getChallengeRequests({ userId }),
+      ]);
 
-        setParticipatingChallenges(
-          (inProgress || []).map((challenge) => mapChallengeToCard(challenge, "participating"))
+      if (!isActive) return;
+
+      let participatingCards = [];
+
+      if (inProgressResult.status === "fulfilled") {
+        participatingCards = (inProgressResult.value || []).map((challenge) =>
+          mapChallengeToCard(challenge, "participating")
         );
+        setIsParticipatingLoading(false);
+      } else {
+        setLoadError(inProgressResult.reason?.message || "데이터를 불러오지 못했습니다.");
+        setIsParticipatingLoading(false);
+      }
+
+      if (closedResult.status === "fulfilled") {
         setCompletedChallenges(
-          (closed || []).map((challenge) => mapChallengeToCard(challenge, "completed"))
+          (closedResult.value || []).map((challenge) =>
+            mapChallengeToCard(challenge, "completed")
+          )
         );
-      } catch (error) {
-        if (isActive) {
-          setLoadError(error.message || "데이터를 불러오지 못했습니다.");
-        }
+        setIsCompletedLoading(false);
+      } else if (!loadError) {
+        setLoadError(closedResult.reason?.message || "데이터를 불러오지 못했습니다.");
+        setIsCompletedLoading(false);
       }
 
-      try {
-        const requests = await getChallengeRequests();
-        if (!isActive) return;
-        setAppliedChallenges((requests || []).map(mapRequestToRow));
-      } catch (error) {
-        if (isActive) {
-          setAppliedChallenges([]);
-          setAppliedLoadError(error.message || "신청 목록을 불러오지 못했습니다.");
-        }
-      } finally {
-        if (isActive) {
-          setIsLoading(false);
-        }
+      if (requestsResult.status === "fulfilled") {
+        const requests = requestsResult.value || [];
+        setAppliedChallenges(requests.map(mapRequestToRow));
+        const approvedRequests = requests.filter(
+          (request) => String(request.requestStatus || "").toUpperCase() === "APPROVED"
+        );
+        const approvedCards = approvedRequests.map(mapRequestToChallengeCard);
+        const merged = [...participatingCards, ...approvedCards];
+        const unique = Array.from(new Map(merged.map((item) => [item.id, item])).values());
+        setParticipatingChallenges(unique);
+        setIsAppliedLoading(false);
+      } else {
+        setAppliedChallenges([]);
+        setAppliedLoadError(
+          requestsResult.reason?.message || "신청 목록을 불러오지 못했습니다."
+        );
+        setParticipatingChallenges(participatingCards);
+        setIsAppliedLoading(false);
       }
+
+      setIsLoading(false);
     };
 
     fetchData();
@@ -337,7 +383,6 @@ export default function MyChallengesPage() {
   return (
     <div className="min-h-screen bg-[var(--gray-50)]">
       <Gnb
-        notifications={validatedNotifications}
         user={{ name: "체다치즈", role: "일반" }}
         onMyChallenge={() => router.push("/challenges-my")}
       />
@@ -372,12 +417,6 @@ export default function MyChallengesPage() {
           <div className="flex min-h-[420px] items-center justify-center text-center">
             <p className="font-16-regular text-[var(--error)]">{loadError}</p>
           </div>
-        ) : isLoading ? (
-          <div className="flex min-h-[420px] items-center justify-center text-center">
-            <p className="font-16-regular text-[var(--gray-500)]">
-              데이터를 불러오는 중이에요.
-            </p>
-          </div>
         ) : activeTab === "applied" ? (
           <div className="flex flex-col gap-5 md:gap-2">
             <div className="flex w-full flex-row items-center gap-3">
@@ -399,6 +438,26 @@ export default function MyChallengesPage() {
             {appliedLoadError ? (
               <div className="flex min-h-[420px] items-center justify-center text-center">
                 <p className="font-16-regular text-[var(--error)]">{appliedLoadError}</p>
+              </div>
+            ) : isAppliedLoading ? (
+              <div className="overflow-hidden rounded-2xl border border-[var(--gray-200)] bg-white">
+                <div className="divide-y divide-[var(--gray-100)]">
+                  {Array.from({ length: 6 }).map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="grid grid-cols-[72px_96px_88px_minmax(280px,1fr)_96px_96px_96px_96px] items-center gap-0 px-4 py-3"
+                    >
+                      <div className="h-4 w-8 animate-pulse rounded bg-[var(--gray-100)]" />
+                      <div className="h-4 w-12 animate-pulse rounded bg-[var(--gray-100)]" />
+                      <div className="h-4 w-12 animate-pulse rounded bg-[var(--gray-100)]" />
+                      <div className="h-4 w-40 animate-pulse rounded bg-[var(--gray-100)]" />
+                      <div className="h-4 w-12 animate-pulse rounded bg-[var(--gray-100)]" />
+                      <div className="h-4 w-12 animate-pulse rounded bg-[var(--gray-100)]" />
+                      <div className="h-4 w-12 animate-pulse rounded bg-[var(--gray-100)]" />
+                      <div className="ml-auto h-6 w-16 animate-pulse rounded-full bg-[var(--gray-100)]" />
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : appliedRows.length > 0 ? (
               <>
@@ -462,13 +521,67 @@ export default function MyChallengesPage() {
               </div>
             )}
           </div>
+        ) : (activeTab === "participating" && isParticipatingLoading) ||
+          (activeTab === "completed" && isCompletedLoading) ? (
+          <div className="flex flex-col gap-6">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="flex w-full flex-col rounded-xl border-2 border-[#262626] bg-white p-6"
+              >
+                <div className="mb-4 h-5 w-3/5 animate-pulse rounded bg-[var(--gray-100)]" />
+                <div className="mb-6 flex gap-2">
+                  <div className="h-6 w-16 animate-pulse rounded-full bg-[var(--gray-100)]" />
+                  <div className="h-6 w-16 animate-pulse rounded-full bg-[var(--gray-100)]" />
+                </div>
+                <div className="mb-4 border-t border-[var(--gray-100)]" />
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-6">
+                  <div className="h-4 w-40 animate-pulse rounded bg-[var(--gray-100)]" />
+                  <div className="h-4 w-32 animate-pulse rounded bg-[var(--gray-100)]" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : filteredChallenges.length > 0 ? (
           <div className="flex flex-col gap-6">
-            {filteredChallenges.map((challenge) => (
+        {filteredChallenges.map((challenge) => (
               <ChallengeCard
                 key={challenge.id}
                 {...challenge}
-                isAdmin={Boolean(currentUser)}
+                isAdmin={isAdmin}
+                showAction={!isAdmin && activeTab === "participating"}
+                onAction={async () => {
+                  const linkedId = challenge.linkedChallengeId || challenge.id;
+                  if (String(linkedId).startsWith("request-")) {
+                  const requestId =
+                      challenge.requestId ||
+                      String(linkedId).replace("request-", "");
+                    try {
+                      const detail = await getChallengeRequestDetail(requestId);
+                      const resolvedId =
+                        detail?.challengeId ||
+                        detail?.challenge_id ||
+                        detail?.challenge?.id ||
+                        detail?.challenges?.[0]?.id ||
+                        null;
+                      if (resolvedId) {
+                        router.push(`/challengeDetail/${resolvedId}`);
+                        return;
+                      }
+                      toast({
+                        title: "이동할 챌린지가 없습니다.",
+                        description: "승인된 챌린지가 아직 생성되지 않았습니다.",
+                      });
+                    } catch (error) {
+                      toast({
+                        title: "이동 실패",
+                        description: error.message || "챌린지를 불러오지 못했습니다.",
+                      });
+                    }
+                    return;
+                  }
+                  router.push(`/challengeDetail/${linkedId}`);
+                }}
                 onEdit={() => handleEditChallenge(challenge.id)}
                 onDelete={() => handleDeleteChallenge(challenge.id)}
               />

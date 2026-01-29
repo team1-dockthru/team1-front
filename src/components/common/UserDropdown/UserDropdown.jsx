@@ -35,6 +35,7 @@ export default function UserDropdown({
   const handleToggle = () => setIsOpen((prev) => !prev);
 
   const isAdmin = user.role === '어드민' || user.role === '관리자';
+  const displayName = user.nickname || user.name;
   const ActiveIcon = isAdmin ? AdminProfileIcon : ProfileIcon;
 
   return (
@@ -65,8 +66,8 @@ export default function UserDropdown({
               <ActiveIcon className="size-full" />
             </div>
             <div className="flex flex-col">
-              <span className="font-16-semibold text-[var(--gray-900)]">{user.name}</span>
-              <span className="font-12-regular text-[var(--gray-500)]">{user.role}</span>
+              <span className="font-16-semibold text-[var(--gray-900)]">{displayName}</span>
+              <span className="mt-1.5 font-12-regular text-[var(--gray-500)]">{user.role}</span>
             </div>
           </div>
 

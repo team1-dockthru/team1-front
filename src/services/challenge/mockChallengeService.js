@@ -7,6 +7,53 @@ import { challengeDetailMockData } from '@/mocks/challengeDetailData';
 // liveChallenge, workingChallenge, closedSingleTop, closedMultipleTop, recruitClosed, fewParticipants, noParticipants
 const MOCK_DATA_TYPE = 'recruitClosed';
 
+const MOCK_CHALLENGES = [
+  {
+    id: 101,
+    title: 'React 공식 문서 번역 챌린지',
+    field: '프론트엔드',
+    docType: 'OFFICIAL_DOCUMENT',
+    deadlineAt: '2026-02-01T00:00:00.000Z',
+    maxParticipants: 10,
+    _count: { participants: 1 },
+    challengeStatus: 'IN_PROGRESS',
+    requestStatus: 'APPROVED',
+  },
+  {
+    id: 102,
+    title: 'Next.js App Router 문서 번역',
+    field: 'Next.js',
+    docType: 'OFFICIAL_DOCUMENT',
+    deadlineAt: '2026-02-15T00:00:00.000Z',
+    maxParticipants: 8,
+    _count: { participants: 3 },
+    challengeStatus: 'IN_PROGRESS',
+    requestStatus: 'APPROVED',
+  },
+  {
+    id: 103,
+    title: 'Modern JS 심화 챌린지',
+    field: 'Modern JS',
+    docType: 'BLOG',
+    deadlineAt: '2026-01-10T00:00:00.000Z',
+    maxParticipants: 5,
+    _count: { participants: 5 },
+    challengeStatus: 'IN_PROGRESS',
+    requestStatus: 'APPROVED',
+  },
+  {
+    id: 104,
+    title: 'Next.js App Router: Routing Fundamentals',
+    field: 'Next.js',
+    docType: 'OFFICIAL_DOCUMENT',
+    deadlineAt: '2025-12-31T00:00:00.000Z',
+    maxParticipants: 5,
+    _count: { participants: 5 },
+    challengeStatus: 'CLOSED',
+    requestStatus: 'APPROVED',
+  },
+];
+
 /**
  * 챌린지 상세 조회
  */
@@ -96,4 +143,10 @@ export async function processChallengeRequest(requestId, payload) {
     success: true,
     message: '요청 상태가 변경되었습니다.',
   };
+}
+
+export async function getChallenges() {
+  console.log('[Mock] getChallenges 호출');
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  return MOCK_CHALLENGES;
 }

@@ -16,20 +16,6 @@ import { getCurrentUser } from "@/services/user/apiUserService";
 import RejectModal from "@/components/common/RejectModal/RejectModal";
 import AdminDecisionActions from "@/components/admin/AdminDecisionActions";
 
-const MOCK_NOTIFICATIONS = [
-  {
-    id: 1,
-    content:
-      "'신청한 챌린지 이름'/'챌린지 이름'에 도전한 작업물에/'챌린지 이름'의 작업물에 작성한 피드백이 수정/삭제되었어요",
-    date: "2024.04.01",
-  },
-  {
-    id: 2,
-    content: "'신청한 챌린지 이름'이 승인/거절되었어요",
-    date: "2024.04.01",
-  },
-];
-
 const STATUS_CONFIG = {
   pending: {
     bannerText: "승인 대기 중입니다.",
@@ -306,7 +292,6 @@ export default function ChallengeStatusPage({ params }) {
     return (
       <div className="min-h-screen bg-white">
         <Gnb
-          notifications={MOCK_NOTIFICATIONS}
           isLoggedIn={Boolean(currentUser)}
           role={isAdmin ? "admin" : "member"}
           useUserDropdown
@@ -334,7 +319,6 @@ export default function ChallengeStatusPage({ params }) {
   return (
     <div className="min-h-screen bg-white">
       <Gnb
-        notifications={MOCK_NOTIFICATIONS}
         isLoggedIn={Boolean(currentUser)}
         role={isAdmin ? "admin" : "member"}
         useUserDropdown

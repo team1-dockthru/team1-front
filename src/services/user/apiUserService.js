@@ -76,7 +76,10 @@ export async function getCurrentUser({ token } = {}) {
     token: token || getStoredToken(),
   });
 
-  const user = response?.data?.user || response?.user;
+  const user =
+    response?.data?.user ||
+    response?.user ||
+    response?.data;
   if (!user) {
     return {
       isLoggedIn: false,
