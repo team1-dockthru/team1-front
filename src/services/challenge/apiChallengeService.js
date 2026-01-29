@@ -52,10 +52,15 @@ function buildQuery(params = {}) {
   return `?${searchParams.toString()}`;
 }
 
-export async function getChallenges({ userId, challengeStatus, field, docType } = {}) {
-  const query = buildQuery({ userId, challengeStatus, field, docType });
+export async function getChallenges({ userId, challengeStatus, field, docType, page, limit } = {}) {
+  const query = buildQuery({ userId, challengeStatus, field, docType, page, limit });
   const data = await request(`/challenges${query}`);
-  return data?.data || [];
+  return {
+    challenges: data?.data || [],
+    totalCount: data?.totalCount || 0,
+    totalPages: data?.totalPages || 1,
+    currentPage: data?.currentPage || page || 1,
+  };
 }
 
 export async function getChallengeRequests({ userId, requestStatus } = {}) {
