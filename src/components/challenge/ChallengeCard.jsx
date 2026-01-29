@@ -7,6 +7,7 @@ import ClockIconS from '@/assets/icons/ic-deadline-s.svg';
 import ClockIconM from '@/assets/icons/ic-deadline-m.svg';
 import PersonYellowIcon from '@/assets/icons/ic-person-s-yellow.svg';
 import MeatballsIcon from '@/assets/icons/ic-meatballs-menu.svg';
+import ArrowRightIcon from '@/assets/icons/ic-arrow-right.svg';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -26,6 +27,9 @@ export default function ChallengeCard({
   statusText, // 상단 배지 텍스트 (e.g., '모집이 완료된 상태에요', '챌린지가 마감되었어요')
   isClosed,   // 마감 여부 (검은색 배지)
   isAdmin = false,
+  showAction = false,
+  actionLabel = '도전 계속하기',
+  onAction,
   onEdit,
   onDelete,
   className,
@@ -108,15 +112,31 @@ export default function ChallengeCard({
         <div className="mb-4 border-t border-[var(--gray-100)]" />
 
         {/* Lower Section: Info */}
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-6">
-          <div className="flex items-center gap-1.5 text-[var(--gray-600)]">
-            <ClockIconM className="size-5 shrink-0 translate-y-[1px]" />
-            <span className="font-14-medium leading-none">{deadline}</span>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-6">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-6">
+            <div className="flex items-center gap-1.5 text-[var(--gray-600)]">
+              <ClockIconM className="size-5 shrink-0 translate-y-[1px]" />
+              <span className="font-14-medium leading-none">{deadline}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[var(--gray-600)]">
+              <PersonYellowIcon className="size-5 shrink-0" />
+              <span className="font-14-medium leading-none">{participants}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 text-[var(--gray-600)]">
-            <PersonYellowIcon className="size-5 shrink-0" />
-            <span className="font-14-medium leading-none">{participants}</span>
-          </div>
+          {showAction ? (
+            <button
+              type="button"
+              onClick={onAction}
+              className={cn(
+                'ml-auto flex shrink-0 items-center justify-center gap-1 rounded-full border border-[var(--gray-800)] bg-white transition-colors hover:bg-[var(--gray-50)]',
+                'self-end md:self-auto',
+                'h-[33px] px-4 font-12-bold text-[var(--gray-800)] sm:h-auto sm:py-2 sm:pl-5 sm:pr-4 sm:font-16-bold'
+              )}
+            >
+              <span className="whitespace-nowrap">{actionLabel}</span>
+              <ArrowRightIcon className="size-4 sm:size-5 shrink-0" />
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

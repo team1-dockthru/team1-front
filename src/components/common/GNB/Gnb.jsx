@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import BellEmpty from "@/assets/icons/ic-bell-empty.svg";
 import BellNoti from "@/assets/icons/ic-bell-noti.svg";
@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import NotificationModal from "@/components/common/NotificationModal/NotificationModal";
 import { logout } from "@/services/user";
 import { useAuthStore } from "@/store/authStore";
-import { markNotificationRead } from "@/services/notification";
+import { getNotifications, markNotificationRead } from "@/services/notification";
 
 const DEV_PAGES = [
   { name: "스타일 가이드", href: "/style-guide" },
@@ -25,8 +25,6 @@ const DEV_PAGES = [
   { name: "챌린지 상세", href: "/wip" },
   { name: "작업물 페이지", href: "/workDetail/work_001" },
   { name: "작업 도전하기", href: "/wip" },
-  { name: "관리자 페이지", href: "/wip" },
-  { name: "관리자 작업물", href: "/wip" },
 ];
 
 export default function Gnb({
@@ -41,10 +39,12 @@ export default function Gnb({
   onMyChallenge,
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const clearToken = useAuthStore((state) => state.clearToken);
   const [localNotifications, setLocalNotifications] = useState(notifications);
+  const hasUnread = localNotifications.some((noti) => !noti?.readAt);
   const derivedHasNotification =
-    typeof hasNotification === "boolean" ? hasNotification : notifications.length > 0;
+    typeof hasNotification === "boolean" ? hasNotification : hasUnread;
   const lastNotificationsSigRef = useRef("");
 
   useEffect(() => {
@@ -66,6 +66,25 @@ export default function Gnb({
       setLocalNotifications(notifications);
     }
   }, [notifications]);
+
+  useEffect(() => {
+    let isActive = true;
+    const fetchNotifications = async () => {
+      if (!isLoggedIn || notifications.length > 0) return;
+      try {
+        const result = await getNotifications({ includeRead: true, limit: 10 });
+        if (!isActive) return;
+        setLocalNotifications(result?.notifications || []);
+      } catch {
+        if (!isActive) return;
+        setLocalNotifications([]);
+      }
+    };
+    fetchNotifications();
+    return () => {
+      isActive = false;
+    };
+  }, [isLoggedIn, notifications.length]);
   const BellIcon = derivedHasNotification ? BellNoti : BellEmpty;
   const ProfileIcon = role === 'admin' ? ProfileAdmin : ProfileMember;
   const isAdmin = role === 'admin';
@@ -121,18 +140,36 @@ export default function Gnb({
           <span className="font-logo text-[22.68px]">Docthru</span>
         </Link>
 
-        {/* Admin menu */}
+        {/* Navigation */}
         {isAdmin ? (
           <nav className="inline-flex flex-1 items-center gap-6">
-            <Link className="font-14-semibold text-[var(--gray-900)]" href="/admin/challenge-application">
+            <Link
+              className={cn(
+                "font-14-medium text-[var(--gray-700)]",
+                pathname?.startsWith("/admin/challenge-application") &&
+                  "font-14-semibold text-[var(--gray-900)]"
+              )}
+              href="/admin/challenge-application"
+            >
               챌린지 관리
             </Link>
-            <Link className="font-14-medium text-[var(--gray-700)]" href="/challenges-show">
+            <Link
+              className={cn(
+                "font-14-medium text-[var(--gray-700)]",
+                pathname?.startsWith("/challenges-show") &&
+                  "font-14-semibold text-[var(--gray-900)]"
+              )}
+              href="/challenges-show"
+            >
               챌린지 목록
             </Link>
           </nav>
         ) : (
-          <div className="flex-1" />
+          <nav className="inline-flex flex-1 items-center gap-6">
+            <Link className="font-14-semibold text-[var(--gray-900)]" href="/challenges-show">
+              챌린지 목록
+            </Link>
+          </nav>
         )}
 
         {/* Right */}
@@ -206,6 +243,9 @@ export default function Gnb({
                           );
                         } catch (error) {
                           alert(error.message || "알림 읽음 처리에 실패했습니다.");
+                        }
+                        if (noti?.challengeId) {
+                          router.push(`/challengeDetail/${noti.challengeId}`);
                         }
                       }}
                     />

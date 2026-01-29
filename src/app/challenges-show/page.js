@@ -9,13 +9,11 @@ import ChallengeCard from '@/components/challenge/ChallengeCard';
 import Pagination from '@/components/common/PageButton/Pagination/Pagination';
 import Search from '@/components/common/Search/Search';
 import FilterModal from '@/components/common/FilterModal/FilterModal';
-import notificationsData from '@/data/notifications.json';
-import { notificationsSchema } from '@/schemas/challengeSchemas';
 import PlusIcon from '@/assets/icons/ic-plus-s.svg';
 import FilterActiveIcon from '@/assets/icons/ic-filter-active.svg';
 import FilterInactiveIcon from '@/assets/icons/ic-filter-inactive.svg';
 import { getCurrentUser } from '@/services/user';
-import { deleteChallenge, deleteChallengeAsAdmin, getChallenges } from '@/services/challenge';
+import { deleteChallenge, deleteChallengeAsAdmin, getChallenges, getChallengeRequests } from '@/services/challenge';
 import { toast } from '@/hooks/use-toast';
 import RejectModal from '@/components/common/RejectModal/RejectModal';
 
@@ -35,14 +33,6 @@ export default function ChallengeListPage() {
     docType: '',
     status: '',
   });
-
-  const validatedNotifications = useMemo(() => {
-    try {
-      return notificationsSchema.parse(notificationsData);
-    } catch {
-      return notificationsData;
-    }
-  }, []);
 
   useEffect(() => {
     let isActive = true;
@@ -75,6 +65,13 @@ export default function ChallengeListPage() {
     if (!challengeId) return;
     try {
       if (isAdmin) {
+        if (String(challengeId).startsWith('request-')) {
+          toast({
+            title: '삭제 실패',
+            description: '신청 단계의 항목은 삭제할 수 없습니다.',
+          });
+          return;
+        }
         const trimmedReason = typeof reason === 'string' ? reason.trim() : '';
         if (!trimmedReason) {
           toast({
@@ -106,6 +103,13 @@ export default function ChallengeListPage() {
 
   const openDeleteModal = (challengeId) => {
     if (!challengeId) return;
+    if (String(challengeId).startsWith('request-')) {
+      toast({
+        title: '삭제 실패',
+        description: '신청 단계의 항목은 삭제할 수 없습니다.',
+      });
+      return;
+    }
     if (!isAdmin) {
       handleDeleteChallenge(challengeId);
       return;
@@ -158,7 +162,12 @@ export default function ChallengeListPage() {
     const participantCount = challenge?._count?.participants || 0;
     const maxParticipants = challenge?.maxParticipants || 0;
     const isFull = maxParticipants > 0 && participantCount >= maxParticipants;
-    const isClosed = String(challenge?.challengeStatus || '').toUpperCase() === 'CLOSED';
+    const statusValue = String(challenge?.challengeStatus || '').toUpperCase();
+    const deadline = challenge?.deadlineAt ? new Date(challenge.deadlineAt) : null;
+    const isPastDeadline = deadline && !Number.isNaN(deadline.getTime())
+      ? deadline.getTime() < Date.now()
+      : false;
+    const isClosed = statusValue === 'CLOSED' || (!statusValue && isPastDeadline);
     const statusText = isClosed
       ? '챌린지가 마감되었어요'
       : isFull
@@ -167,6 +176,7 @@ export default function ChallengeListPage() {
 
     return {
       id: challenge.id,
+      isRequest: Boolean(challenge?.isRequest),
       title: challenge.title,
       tags: [
         {
@@ -193,8 +203,50 @@ export default function ChallengeListPage() {
       try {
         const data = await getChallenges();
         if (!isActive) return;
-        const mapped = Array.isArray(data) ? data.map(mapChallengeToCard) : [];
-        setChallenges(mapped);
+        const liveChallenges = Array.isArray(data)
+          ? data.filter((challenge) => !challenge?.deletedAt)
+          : [];
+        setChallenges(liveChallenges.map(mapChallengeToCard));
+        setIsLoading(false);
+
+        getChallengeRequests({ requestStatus: 'APPROVED' })
+          .then((approvedRequests = []) => {
+            if (!isActive) return;
+            const requestChallenges = (approvedRequests || []).map((request) => ({
+              id:
+                request?.challengeId ||
+                request?.challenge_id ||
+                request?.challenge?.id ||
+                request?.challenges?.[0]?.id ||
+                `request-${request.id}`,
+              isRequest: !(
+                request?.challengeId ||
+                request?.challenge_id ||
+                request?.challenge?.id ||
+                request?.challenges?.[0]?.id
+              ),
+              title: request.title,
+              field: request.field,
+              docType: request.docType,
+              deadlineAt: request.deadlineAt,
+              maxParticipants: request.maxParticipants,
+              _count: { participants: 0 },
+              challengeStatus: request.challengeStatus,
+            }));
+            const merged = [...liveChallenges, ...requestChallenges].map(mapChallengeToCard);
+            const unique = Array.from(
+              new Map(
+                merged.map((item) => [
+                  `${item.id}-${item.isRequest ? "request" : "challenge"}`,
+                  item,
+                ])
+              ).values()
+            );
+            setChallenges(unique);
+          })
+          .catch(() => {
+            // ignore request failures; primary list already rendered
+          });
       } catch (error) {
         if (!isActive) return;
         setLoadError(error.message || '챌린지 목록을 불러오지 못했습니다.');
@@ -263,7 +315,6 @@ export default function ChallengeListPage() {
   return (
     <div className="min-h-screen bg-[var(--gray-50)]">
       <Gnb
-        notifications={validatedNotifications}
         isLoggedIn={Boolean(currentUser)}
         role={isAdmin ? 'admin' : 'member'}
         useUserDropdown
@@ -290,56 +341,41 @@ export default function ChallengeListPage() {
             </Link>
           </div>
 
-          {filteredChallenges.length > 0 ? (
-            <div className="flex flex-row items-center gap-2 md:gap-4">
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsFilterOpen(!isFilterOpen)}
-                  className={`inline-flex h-10 w-[84px] md:w-[112px] shrink-0 items-center justify-center gap-1 md:gap-2 rounded-[32px] border transition-colors ${
-                    filterCount > 0 
-                      ? 'bg-[var(--gray-900)] border-[var(--gray-900)] text-white' 
-                      : 'bg-white border-[var(--gray-300)] text-[var(--gray-900)]'
-                  } font-14-medium`}
-                >
-                  <span className="leading-none">필터{filterCount > 0 ? `(${filterCount})` : ''}</span>
-                  {filterCount > 0 ? (
-                    <FilterActiveIcon className="size-4 md:size-5 shrink-0 text-white" />
-                  ) : (
-                    <FilterInactiveIcon className="size-4 md:size-5 shrink-0 text-[var(--gray-500)]" />
-                  )}
-                </button>
-
-                <FilterModal
-                  isOpen={isFilterOpen}
-                  onClose={() => setIsFilterOpen(false)}
-                  onApply={handleFilterApply}
-                  initialFilters={appliedFilters}
-                />
-              </div>
-
-              <Search
-                placeholder="챌린지 이름을 검색해보세요"
-                className="w-[237px] md:w-full md:max-w-[800px]"
-                onSearch={setSearchQuery}
-              />
-            </div>
-          ) : (
-            <div className="flex items-center justify-end gap-2 md:gap-4">
-              <Search
-                placeholder="챌린지 이름을 검색해보세요"
-                className="w-[237px] md:w-full md:max-w-[800px]"
-                onSearch={setSearchQuery}
-              />
-              <Link
-                href="/challenges-new"
-                className="inline-flex h-10 items-center gap-1 rounded-full bg-[var(--gray-900)] px-4 py-2 font-14-semibold text-white hover:bg-[var(--gray-800)]"
+          <div className="flex flex-row items-center gap-2 md:gap-4">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                className={`inline-flex h-10 w-[84px] md:w-[112px] shrink-0 items-center justify-between rounded-[32px] border px-4 transition-colors ${
+                  filterCount > 0 
+                    ? 'bg-[var(--gray-900)] border-[var(--gray-900)] text-white' 
+                    : 'bg-white border-[var(--gray-300)] text-[var(--gray-900)]'
+                } font-14-medium`}
               >
-                <span className="leading-none">신규 챌린지 신청</span>
-                <PlusIcon className="size-4 shrink-0" />
-              </Link>
+                <span className="text-[16px] text-[var(--gray-400)] leading-none">
+                  필터{filterCount > 0 ? `(${filterCount})` : ''}
+                </span>
+                {filterCount > 0 ? (
+                  <FilterActiveIcon className="size-4 shrink-0 text-white" />
+                ) : (
+                  <FilterInactiveIcon className="size-4 shrink-0 text-[var(--gray-500)]" />
+                )}
+              </button>
+
+              <FilterModal
+                isOpen={isFilterOpen}
+                onClose={() => setIsFilterOpen(false)}
+                onApply={handleFilterApply}
+                initialFilters={appliedFilters}
+              />
             </div>
-          )}
+
+            <Search
+              placeholder="챌린지 이름을 검색해보세요"
+              className="w-[237px] md:w-full md:max-w-[800px]"
+              onSearch={setSearchQuery}
+            />
+          </div>
         </div>
 
         {/* Challenge List - Vertical Stack */}
@@ -356,9 +392,9 @@ export default function ChallengeListPage() {
           </div>
         ) : filteredChallenges.length > 0 ? (
           <div className="flex flex-col gap-6">
-            {filteredChallenges.map((challenge) => (
+            {filteredChallenges.map((challenge, index) => (
               <ChallengeCard
-                key={challenge.id}
+                key={`${challenge.id}-${challenge.isRequest ? "request" : "challenge"}-${index}`}
                 {...challenge}
                 isAdmin={isAdmin}
                 onEdit={() => handleEditChallenge(challenge.id)}

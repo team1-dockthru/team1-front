@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Container from "@/components/common/Container/Container";
 import Gnb from "@/components/common/GNB/Gnb";
@@ -9,8 +9,6 @@ import CategoryDropdown from "@/components/common/CategoryDropdown/CategoryDropd
 import TextBox from "@/components/common/TextBox/TextBox";
 import Button from "@/components/common/Button/Button";
 import challengesNewData from "@/data/challenges-new.json";
-import notificationsData from "@/data/notifications.json";
-import { notificationsSchema } from "@/schemas/challengeSchemas";
 import { challengeNewFormSchema } from "@/schemas/challengeSchemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -30,14 +28,6 @@ function ChallengeApplyContent() {
   
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  const validatedNotifications = useMemo(() => {
-    try {
-      return notificationsSchema.parse(notificationsData);
-    } catch {
-      return notificationsData;
-    }
   }, []);
 
   const {
@@ -201,7 +191,7 @@ function ChallengeApplyContent() {
 
   return (
     <div className="min-h-screen bg-[var(--gray-50)]">
-      <Gnb notifications={validatedNotifications} />
+      <Gnb />
       <Container className="py-10 md:py-[60px]">
         <div className="mx-auto flex w-full max-w-[570px] flex-col gap-6">
           <h1 className="font-24-bold text-[var(--gray-900)]">

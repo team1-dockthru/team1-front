@@ -1,1 +1,1 @@
-export { markNotificationRead } from "./apiNotificationService";
+export { getNotifications, markNotificationRead } from "./apiNotificationService";
