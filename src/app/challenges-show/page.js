@@ -17,9 +17,12 @@ import { deleteChallenge, deleteChallengeAsAdmin, getChallenges, getChallengeReq
 import { toast } from '@/hooks/use-toast';
 import RejectModal from '@/components/common/RejectModal/RejectModal';
 
+const PAGE_SIZE = 5;
+
 export default function ChallengeListPage() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
@@ -201,52 +204,58 @@ export default function ChallengeListPage() {
       setIsLoading(true);
       setLoadError('');
       try {
-        const data = await getChallenges();
+        const result = await getChallenges({ page: currentPage, limit: PAGE_SIZE });
         if (!isActive) return;
-        const liveChallenges = Array.isArray(data)
-          ? data.filter((challenge) => !challenge?.deletedAt)
+        
+        const liveChallenges = Array.isArray(result.challenges)
+          ? result.challenges.filter((challenge) => !challenge?.deletedAt)
           : [];
+        
+        setTotalPages(result.totalPages || 1);
         setChallenges(liveChallenges.map(mapChallengeToCard));
         setIsLoading(false);
 
-        getChallengeRequests({ requestStatus: 'APPROVED' })
-          .then((approvedRequests = []) => {
-            if (!isActive) return;
-            const requestChallenges = (approvedRequests || []).map((request) => ({
-              id:
-                request?.challengeId ||
-                request?.challenge_id ||
-                request?.challenge?.id ||
-                request?.challenges?.[0]?.id ||
-                `request-${request.id}`,
-              isRequest: !(
-                request?.challengeId ||
-                request?.challenge_id ||
-                request?.challenge?.id ||
-                request?.challenges?.[0]?.id
-              ),
-              title: request.title,
-              field: request.field,
-              docType: request.docType,
-              deadlineAt: request.deadlineAt,
-              maxParticipants: request.maxParticipants,
-              _count: { participants: 0 },
-              challengeStatus: request.challengeStatus,
-            }));
-            const merged = [...liveChallenges, ...requestChallenges].map(mapChallengeToCard);
-            const unique = Array.from(
-              new Map(
-                merged.map((item) => [
-                  `${item.id}-${item.isRequest ? "request" : "challenge"}`,
-                  item,
-                ])
-              ).values()
-            );
-            setChallenges(unique);
-          })
-          .catch(() => {
-            // ignore request failures; primary list already rendered
-          });
+        // 첫 페이지에서만 승인된 요청 목록 병합
+        if (currentPage === 1) {
+          getChallengeRequests({ requestStatus: 'APPROVED' })
+            .then((approvedRequests = []) => {
+              if (!isActive) return;
+              const requestChallenges = (approvedRequests || []).map((request) => ({
+                id:
+                  request?.challengeId ||
+                  request?.challenge_id ||
+                  request?.challenge?.id ||
+                  request?.challenges?.[0]?.id ||
+                  `request-${request.id}`,
+                isRequest: !(
+                  request?.challengeId ||
+                  request?.challenge_id ||
+                  request?.challenge?.id ||
+                  request?.challenges?.[0]?.id
+                ),
+                title: request.title,
+                field: request.field,
+                docType: request.docType,
+                deadlineAt: request.deadlineAt,
+                maxParticipants: request.maxParticipants,
+                _count: { participants: 0 },
+                challengeStatus: request.challengeStatus,
+              }));
+              const merged = [...liveChallenges, ...requestChallenges].map(mapChallengeToCard);
+              const unique = Array.from(
+                new Map(
+                  merged.map((item) => [
+                    `${item.id}-${item.isRequest ? "request" : "challenge"}`,
+                    item,
+                  ])
+                ).values()
+              );
+              setChallenges(unique);
+            })
+            .catch(() => {
+              // ignore request failures; primary list already rendered
+            });
+        }
       } catch (error) {
         if (!isActive) return;
         setLoadError(error.message || '챌린지 목록을 불러오지 못했습니다.');
@@ -266,7 +275,7 @@ export default function ChallengeListPage() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [currentPage]);
 
   const filterCount =
     appliedFilters.fields.length +
@@ -276,6 +285,12 @@ export default function ChallengeListPage() {
   const handleFilterApply = (filters) => {
     setAppliedFilters(filters);
     setIsFilterOpen(false);
+    setCurrentPage(1);
+  };
+
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
   };
 
   const filteredChallenges = useMemo(() => {
@@ -373,7 +388,7 @@ export default function ChallengeListPage() {
             <Search
               placeholder="챌린지 이름을 검색해보세요"
               className="w-[237px] md:w-full md:max-w-[800px]"
-              onSearch={setSearchQuery}
+              onSearch={handleSearch}
             />
           </div>
         </div>
@@ -422,13 +437,15 @@ export default function ChallengeListPage() {
         )}
 
         {/* Pagination Section */}
-        <div className="mt-10 md:mt-[60px] flex justify-center">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={5}
-            onPageChange={setCurrentPage}
-          />
-        </div>
+        {totalPages > 1 && (
+          <div className="mt-10 md:mt-[60px] flex justify-center">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        )}
       </Container>
 
       <RejectModal

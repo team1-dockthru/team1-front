@@ -1,10 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Gnb from "@/components/common/GNB/Gnb";
 import { cn } from "@/lib/utils";
 import Button from "@/components/common/Button/Button";
 import Input from "@/components/common/Input/Input";
+
+// 이 페이지로의 직접 접근을 차단하고 메인 페이지로 리다이렉트
+const BLOCK_ACCESS = true;
 
 const COLORS = [
   {
@@ -48,14 +52,19 @@ const TYPOGRAPHY = [
 ];
 
 export default function StyleGuidePage() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [inputValue, setInputValue] = useState("");
   
   useEffect(() => {
+    if (BLOCK_ACCESS) {
+      router.replace("/");
+      return;
+    }
     setMounted(true);
-  }, []);
+  }, [router]);
 
-  if (!mounted) {
+  if (BLOCK_ACCESS || !mounted) {
     return null;
   }
 

@@ -26,20 +26,32 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
+    let isActive = true;
+    let hasRedirected = false;
+
     const fetchUser = async () => {
       try {
         const userData = await getCurrentUser();
+        if (!isActive || hasRedirected) return;
+        
         if (userData?.isLoggedIn && userData?.role === "member") {
+          hasRedirected = true;
           router.replace("/challenges-show");
           return;
         }
         setUser(userData);
       } catch {
-        setUser({ isLoggedIn: false, role: "guest" });
+        if (isActive) {
+          setUser({ isLoggedIn: false, role: "guest" });
+        }
       }
     };
     fetchUser();
-  }, [router]);
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
   return (
     <div className="min-h-screen bg-[var(--gray-50)] text-[var(--gray-900)]">
       <Gnb
