@@ -148,6 +148,7 @@ export default function MyChallengesPage() {
           : "";
       return {
         id: challenge.id,
+        originalWorkId: challenge?.originalWorkId || challenge?.original_work_id || null,
         tab,
         title: challenge.title,
         tags: [
@@ -553,7 +554,7 @@ export default function MyChallengesPage() {
                 onAction={async () => {
                   const linkedId = challenge.linkedChallengeId || challenge.id;
                   if (String(linkedId).startsWith("request-")) {
-                  const requestId =
+                    const requestId =
                       challenge.requestId ||
                       String(linkedId).replace("request-", "");
                     try {
@@ -565,7 +566,7 @@ export default function MyChallengesPage() {
                         detail?.challenges?.[0]?.id ||
                         null;
                       if (resolvedId) {
-                        router.push(`/challengeDetail/${resolvedId}`);
+                        router.push(`/challenge/${resolvedId}`);
                         return;
                       }
                       toast({
@@ -580,7 +581,7 @@ export default function MyChallengesPage() {
                     }
                     return;
                   }
-                  router.push(`/challengeDetail/${linkedId}`);
+                  router.push(`/challenge/${linkedId}`);
                 }}
                 onEdit={() => handleEditChallenge(challenge.id)}
                 onDelete={() => handleDeleteChallenge(challenge.id)}
