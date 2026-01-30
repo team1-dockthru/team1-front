@@ -237,9 +237,10 @@ export default function MyChallengesPage() {
       setLoadError("");
       setAppliedLoadError("");
 
-      const [inProgressResult, closedResult, requestsResult, createdInProgressResult] = await Promise.allSettled([
+      const [inProgressResult, closedResult, completedResult, requestsResult, createdInProgressResult] = await Promise.allSettled([
         getMyChallenges({ challengeStatus: "IN_PROGRESS" }),
         getMyChallenges({ challengeStatus: "CLOSED" }),
+        getMyChallenges({ challengeStatus: "COMPLETED" }),
         getChallengeRequests({ userId }),
         getChallenges({ userId }),
       ]);
@@ -260,10 +261,16 @@ export default function MyChallengesPage() {
         setIsParticipatingLoading(false);
       }
 
-      if (closedResult.status === "fulfilled") {
-        const closedList = normalizeList(closedResult.value);
+      // CLOSED와 COMPLETED 모두 "완료한 챌린지"로 표시
+      const closedListRaw = closedResult.status === "fulfilled" ? normalizeList(closedResult.value) : [];
+      const completedListRaw = completedResult.status === "fulfilled" ? normalizeList(completedResult.value) : [];
+      const allCompletedList = [...closedListRaw, ...completedListRaw];
+      // 중복 제거
+      const uniqueCompletedList = Array.from(new Map(allCompletedList.map((item) => [item.id, item])).values());
+
+      if (closedResult.status === "fulfilled" || completedResult.status === "fulfilled") {
         setCompletedChallenges(
-          closedList.map((challenge) => mapChallengeToCard(challenge, "completed"))
+          uniqueCompletedList.map((challenge) => mapChallengeToCard(challenge, "completed"))
         );
         setIsCompletedLoading(false);
       } else if (!loadError) {
