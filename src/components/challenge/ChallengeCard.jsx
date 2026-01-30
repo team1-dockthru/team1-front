@@ -30,6 +30,7 @@ export default function ChallengeCard({
   showAction = false,
   actionLabel = '도전 계속하기',
   onAction,
+  onClick,
   onEdit,
   onDelete,
   className,
@@ -38,8 +39,10 @@ export default function ChallengeCard({
     <div
       className={cn(
         'group flex w-full flex-col rounded-xl border-2 border-[#262626] bg-white transition-shadow hover:shadow-md',
+        onClick ? 'cursor-pointer' : '',
         className
       )}
+      onClick={onClick}
     >
       <div className="relative flex flex-col p-5 md:p-6">
         {/* Upper Section: Status Badge (Optional) + Admin Menu */}
@@ -66,12 +69,14 @@ export default function ChallengeCard({
             <DropdownMenuTrigger
               className="absolute right-5 top-5 inline-flex size-8 items-center justify-center rounded-full hover:bg-[var(--gray-50)] md:right-6 md:top-6"
               aria-label="챌린지 관리"
+              onClick={(event) => event.stopPropagation()}
             >
               <MeatballsIcon className="size-5 text-[var(--gray-400)]" />
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
               className="w-[120px] border-[#d4d4d4] bg-white p-0"
+              onClick={(event) => event.stopPropagation()}
             >
               <DropdownMenuItem
                 onClick={onEdit}
@@ -126,7 +131,10 @@ export default function ChallengeCard({
           {showAction ? (
             <button
               type="button"
-              onClick={onAction}
+              onClick={(event) => {
+                event.stopPropagation();
+                if (onAction) onAction();
+              }}
               className={cn(
                 'ml-auto flex shrink-0 items-center justify-center gap-1 rounded-full border border-[var(--gray-800)] bg-white transition-colors hover:bg-[var(--gray-50)]',
                 'self-end md:self-auto',

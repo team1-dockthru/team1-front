@@ -412,6 +412,16 @@ export default function ChallengeListPage() {
                 key={`${challenge.id}-${challenge.isRequest ? "request" : "challenge"}-${index}`}
                 {...challenge}
                 isAdmin={isAdmin}
+                onClick={() => {
+                  if (challenge.isRequest) {
+                    toast({
+                      title: "이동할 챌린지가 없습니다.",
+                      description: "승인된 챌린지가 아직 생성되지 않았습니다.",
+                    });
+                    return;
+                  }
+                  router.push(`/challengeDetail/${challenge.id}`);
+                }}
                 onEdit={() => handleEditChallenge(challenge.id)}
                 onDelete={() => openDeleteModal(challenge.id)}
               />

@@ -63,6 +63,17 @@ export async function getChallenges({ userId, challengeStatus, field, docType, p
   };
 }
 
+export async function getMyChallenges({ challengeStatus, field, docType, page, limit } = {}) {
+  const query = buildQuery({ challengeStatus, field, docType, page, limit });
+  const data = await request(`/challenges/my${query}`);
+  return {
+    challenges: data?.data || [],
+    totalCount: data?.totalCount || 0,
+    totalPages: data?.totalPages || 1,
+    currentPage: data?.currentPage || page || 1,
+  };
+}
+
 export async function getChallengeRequests({ userId, requestStatus } = {}) {
   const query = buildQuery({ userId, requestStatus });
   const data = await request(`/challenges/requests${query}`);
