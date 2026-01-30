@@ -18,10 +18,8 @@ export default function ParticipationStatus({ participants, challengeId, authorU
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // 작성자는 참여 현황에서 제외
-  const filteredParticipants = participants?.filter(
-    (p) => p.userId !== authorUserId && String(p.userId) !== String(authorUserId)
-  ) || [];
+  // 모든 참여자 표시 (작성자 포함)
+  const filteredParticipants = participants || [];
 
   // 빈 상태
   if (!filteredParticipants || filteredParticipants.length === 0) {
