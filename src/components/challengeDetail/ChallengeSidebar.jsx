@@ -5,11 +5,14 @@ import ActionCard from '@/components/common/ActionCard/ActionCard';
 export default function ChallengeSidebar({
   deadline,
   participantCount,
+  sourceUrl,
   originalWorkId,
   isParticipating,
   status,
   onJoinChallenge,
+  onContinueChallenge,
   maxParticipants = 15,
+  myWorkId,
 }) {
   // "2024년 2월 28일 마감" → "2024년 2월 28일"로 변환
   const deadlineText = deadline.replace(' 마감', '');
@@ -36,7 +39,10 @@ export default function ChallengeSidebar({
   const isDisabled = status === 'closed' || status === 'recruitClosed' || isDeadlinePassed() || isRecruitFull;
   
   const handlePrimaryClick = () => {
-    window.location.href = `/works/${originalWorkId}`;
+    // 원문 보기: 챌린지 생성 시 입력한 sourceUrl로 이동
+    if (sourceUrl) {
+      window.open(sourceUrl, '_blank');
+    }
   };
 
   const handleSecondaryClick = () => {
@@ -44,8 +50,16 @@ export default function ChallengeSidebar({
     if (isDisabled) {
       return;
     }
-    onJoinChallenge();
+    // 참여 중이면 도전 계속하기, 아니면 작업 도전하기
+    if (isParticipating && myWorkId) {
+      onContinueChallenge();
+    } else {
+      onJoinChallenge();
+    }
   };
+
+  // 버튼 텍스트 결정
+  const secondaryButtonText = isParticipating && myWorkId ? '도전 계속하기' : '작업 도전하기';
 
   return (
     <ActionCard
@@ -54,8 +68,7 @@ export default function ChallengeSidebar({
       maxParticipants={maxParticipants}
       onPrimaryClick={handlePrimaryClick}
       onSecondaryClick={handleSecondaryClick}
-      // TODO: ActionCard에 secondaryButtonText prop 추가 필요
-      // secondaryButtonText={isParticipating ? '도전 계속하기' : '작업 도전하기'}
+      secondaryButtonText={secondaryButtonText}
     />
   );
 }

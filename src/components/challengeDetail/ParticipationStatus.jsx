@@ -3,6 +3,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { getMyWork } from '@/services/challenge';
 import List from '@/components/common/List/List';
 import ListItem from '@/components/common/List/ListItem';
 import CrownIcon from '@/assets/icons/ic-crown-yellow.svg';
@@ -11,12 +13,18 @@ import HeartIcon from '@/assets/icons/ic-heart-active-s.svg';
 import ArrowRightIcon from '@/assets/icons/ic-arrow-direction-active-right.svg';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-export default function ParticipationStatus({ participants }) {
+export default function ParticipationStatus({ participants, challengeId, authorUserId }) {
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  // 작성자는 참여 현황에서 제외
+  const filteredParticipants = participants?.filter(
+    (p) => p.userId !== authorUserId && String(p.userId) !== String(authorUserId)
+  ) || [];
+
   // 빈 상태
-  if (!participants || participants.length === 0) {
+  if (!filteredParticipants || filteredParticipants.length === 0) {
     return (
       <div className="rounded-xl border-2 border-[#262626] bg-white p-4 shadow-sm">
         <h3 className="font-18-bold mb-4 px-2">참여 현황</h3>
@@ -29,9 +37,9 @@ export default function ParticipationStatus({ participants }) {
     );
   }
 
-  const totalPages = Math.ceil(participants.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredParticipants.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const displayParticipants = participants.slice(startIndex, startIndex + itemsPerPage);
+  const displayParticipants = filteredParticipants.slice(startIndex, startIndex + itemsPerPage);
 
   const handlePrevPage = () => {
     if (currentPage > 1) setCurrentPage(currentPage - 1);
@@ -42,11 +50,11 @@ export default function ParticipationStatus({ participants }) {
   };
 
   // 5명 이하일 때는 페이지네이션 숨김
-  const showPagination = participants.length > 5;
+  const showPagination = filteredParticipants.length > 5;
 
   // 최다 좋아요 수 계산 (공동 1위 처리)
-  const maxLikes = participants.length > 0 
-    ? Math.max(...participants.map(p => p.likeCount))
+  const maxLikes = filteredParticipants.length > 0 
+    ? Math.max(...filteredParticipants.map(p => p.likeCount))
     : 0;
 
   return (
@@ -80,44 +88,72 @@ export default function ParticipationStatus({ participants }) {
 
       {/* 참여자 목록 */}
       <List>
-        {displayParticipants.map((participant) => (
-          <ListItem
-            key={participant.userId}
-            left={
-              <div className="flex items-center gap-4">
-                {/* 순위 뱃지 - 타원형 */}
-                <div className="flex min-w-[60px] items-center justify-center gap-1 rounded-full bg-[var(--brand-black)] px-3 py-1 text-[var(--brand-yellow)]">
-                  {/* 최다 좋아요 = 1위 (공동 1위 포함) */}
-                  {participant.likeCount === maxLikes && <CrownIcon />}
-                  <span className="font-14-bold">
-                    {participant.rank < 10 ? `0${participant.rank}` : participant.rank}
-                  </span>
+        {displayParticipants.map((participant, index) => {
+          const rank = participant.rank || (startIndex + index + 1);
+          const likeCount = participant.likeCount || 0;
+          const isTopLiker = maxLikes > 0 && likeCount === maxLikes;
+          
+          return (
+            <ListItem
+              key={participant.userId || participant.participantId || index}
+              left={
+                <div className="flex items-center gap-4">
+                  {/* 순위 뱃지 - 타원형 */}
+                  <div className="flex min-w-[60px] items-center justify-center gap-1 rounded-full bg-[var(--brand-black)] px-3 py-1 text-[var(--brand-yellow)]">
+                    {/* 최다 좋아요 = 1위 (공동 1위 포함) */}
+                    {isTopLiker && <CrownIcon />}
+                    <span className="font-14-bold">
+                      {rank < 10 ? `0${rank}` : rank}
+                    </span>
+                  </div>
+                  {/* 프로필 */}
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-yellow)]">
+                    <ProfileIcon className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-                {/* 프로필 */}
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-yellow)]">
-                  <ProfileIcon className="h-6 w-6 text-white" />
+              }
+              title={participant.nickname || '참여자'}
+              subtitle={participant.role || '일반'}
+              meta={
+                <>
+                  <HeartIcon />
+                  <span>{likeCount.toLocaleString()}</span>
+                </>
+              }
+              action={
+                <div className="flex cursor-pointer items-center gap-1">
+                  <span>작업물 보기</span>
+                  <ArrowRightIcon className="h-5 w-5" />
                 </div>
-              </div>
-            }
-            title={participant.nickname}
-            subtitle={participant.role || (participant.rank === 1 ? '전문가' : '일반')}
-            meta={
-              <>
-                <HeartIcon />
-                <span>{participant.likeCount.toLocaleString()}</span>
-              </>
-            }
-            action={
-              <div className="flex cursor-pointer items-center gap-1">
-                <span>작업물 보기</span>
-                <ArrowRightIcon className="h-5 w-5" />
-              </div>
-            }
-            onClick={() => {
-              console.log('작업물 보기:', participant.userId);
-            }}
-          />
-        ))}
+              }
+              onClick={async () => {
+                try {
+                  // participant.userId가 문자열일 수 있으므로 숫자로 변환
+                  const userId = typeof participant.userId === 'string' 
+                    ? parseInt(participant.userId, 10) 
+                    : participant.userId;
+                  
+                  // challengeId도 숫자로 변환
+                  const numChallengeId = typeof challengeId === 'string' 
+                    ? parseInt(challengeId, 10) 
+                    : challengeId;
+                  
+                  // 해당 유저의 Work 조회
+                  const work = await getMyWork(numChallengeId, userId);
+                  if (work && work.id) {
+                    // workDetail 페이지로 이동
+                    router.push(`/workDetail/${work.id}`);
+                  } else {
+                    alert('작업물을 찾을 수 없습니다.');
+                  }
+                } catch (err) {
+                  console.error('작업물 조회 실패:', err);
+                  alert('작업물을 찾을 수 없습니다.');
+                }
+              }}
+            />
+          );
+        })}
       </List>
     </div>
   );

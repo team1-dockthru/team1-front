@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { getChallengeDetail, joinChallenge, updateChallenge, deleteChallenge } from '@/services/challenge';
+import { useRouter } from 'next/navigation';
+import { getChallengeDetail, joinChallenge, updateChallenge, deleteChallenge, createWork, getMyWork } from '@/services/challenge';
 import { getCurrentUser } from '@/services/user';
 
 import Gnb from '@/components/common/GNB/Gnb';
@@ -13,11 +14,13 @@ import ChallengeSidebar from '@/components/challengeDetail/ChallengeSidebar';
 import ParticipationStatus from '@/components/challengeDetail/ParticipationStatus';
 
 export default function ChallengeDetailPage({ params }) {
+  const router = useRouter();
   const { challengeId } = use(params);
   const [challengeData, setChallengeData] = useState(null);
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [myWorkId, setMyWorkId] = useState(null);
 
   // 사용자 정보 로딩
   useEffect(() => {
@@ -39,6 +42,18 @@ export default function ChallengeDetailPage({ params }) {
         setIsLoading(true);
         const data = await getChallengeDetail(challengeId);
         setChallengeData(data);
+        
+        // 현재 사용자의 Work 조회 (참여 중인 경우)
+        if (data.isParticipating && user?.user?.id) {
+          try {
+            const work = await getMyWork(challengeId, user.user.id);
+            if (work) {
+              setMyWorkId(work.id);
+            }
+          } catch (err) {
+            console.error('작업물 조회 실패:', err);
+          }
+        }
       } catch (err) {
         console.error('챌린지 조회 실패:', err);
         setError(err.message);
@@ -47,20 +62,79 @@ export default function ChallengeDetailPage({ params }) {
       }
     };
 
-    fetchData();
-  }, [challengeId]);
+    if (user) {
+      fetchData();
+    }
+  }, [challengeId, user]);
 
   // ========== 이벤트 핸들러 ==========
 
-  // 챌린지 참여하기 / 도전 계속하기
+  // 챌린지 참여하기
   const handleJoinChallenge = async () => {
     try {
-      await joinChallenge(challengeId);
-      // TODO: 챌린지 작업 페이지로 이동
-      console.log('챌린지 작업 페이지로 이동');
+      // 1. 챌린지 참여 신청 (이미 참여 중이면 실패할 수 있음)
+      try {
+        await joinChallenge(challengeId);
+      } catch (joinErr) {
+        // 이미 참여 신청한 경우는 무시하고 Work 조회로 진행
+        console.log('이미 참여 신청한 상태:', joinErr);
+      }
+      
+      // 2. Work 생성 또는 조회
+      let work = null;
+      if (user?.user?.id) {
+        try {
+          work = await getMyWork(challengeId, user.user.id);
+        } catch (workErr) {
+          console.log('작업물 조회 실패 (생성으로 진행):', workErr);
+        }
+      }
+      
+      if (!work) {
+        // Work가 없으면 생성
+        // 백엔드가 content를 필수로 요구하므로 빈 문자열 대신 공백 문자 전달
+        try {
+          work = await createWork(challengeId, challengeData.title, ' ', challengeData.sourceUrl);
+        } catch (createErr) {
+          console.error('작업물 생성 실패:', createErr);
+          throw new Error('작업물을 생성하지 못했습니다. 다시 시도해주세요.');
+        }
+      }
+      
+      // 3. 작업 페이지로 이동
+      if (work && work.id) {
+        router.push(`/challenge/${challengeId}/work/${work.id}`);
+      } else {
+        alert('작업물을 생성하지 못했습니다.');
+      }
     } catch (err) {
       console.error('챌린지 참여 실패:', err);
-      alert('챌린지 참여에 실패했습니다.');
+      alert(err.message || '챌린지 참여에 실패했습니다.');
+    }
+  };
+
+  // 도전 계속하기
+  const handleContinueChallenge = () => {
+    if (myWorkId) {
+      // workDetail 페이지로 이동
+      router.push(`/workDetail/${myWorkId}`);
+    } else {
+      // Work ID가 없으면 다시 조회 시도
+      if (user?.user?.id) {
+        getMyWork(challengeId, user.user.id).then(work => {
+        if (work && work.id) {
+          setMyWorkId(work.id);
+          router.push(`/workDetail/${work.id}`);
+        } else {
+          alert('작업물을 찾을 수 없습니다.');
+        }
+        }).catch(err => {
+          console.error('작업물 조회 실패:', err);
+          alert('작업물을 찾을 수 없습니다.');
+        });
+      } else {
+        alert('로그인이 필요합니다.');
+      }
     }
   };
 
@@ -152,12 +226,15 @@ export default function ChallengeDetailPage({ params }) {
             <div className="hidden lg:block lg:w-[340px]">
               <ChallengeSidebar
                 deadline={challengeData.deadline}
-                participantCount={challengeData.participantCount || 0}
+                participantCount={challengeData.participantCount || 1}
+                sourceUrl={challengeData.sourceUrl}
                 originalWorkId={challengeData.originalWorkId}
                 isParticipating={challengeData.isParticipating}
                 status={challengeData.status}
                 onJoinChallenge={handleJoinChallenge}
+                onContinueChallenge={handleContinueChallenge}
                 maxParticipants={challengeData.maxParticipants || 15}
+                myWorkId={myWorkId}
               />
             </div>
           </div>
@@ -166,12 +243,15 @@ export default function ChallengeDetailPage({ params }) {
           <div className="mb-6 lg:hidden">
             <ChallengeSidebar
               deadline={challengeData.deadline}
-              participantCount={challengeData.participantCount || 0}
+              participantCount={challengeData.participantCount || 1}
+              sourceUrl={challengeData.sourceUrl}
               originalWorkId={challengeData.originalWorkId}
               isParticipating={challengeData.isParticipating}
               status={challengeData.status}
               onJoinChallenge={handleJoinChallenge}
+              onContinueChallenge={handleContinueChallenge}
               maxParticipants={challengeData.maxParticipants || 15}
+              myWorkId={myWorkId}
             />
           </div>
 
@@ -181,7 +261,11 @@ export default function ChallengeDetailPage({ params }) {
           )}
 
           {/* 참여 현황 */}
-          <ParticipationStatus participants={challengeData.participants} />
+          <ParticipationStatus 
+            participants={challengeData.participants} 
+            challengeId={challengeId}
+            authorUserId={challengeData.author?.userId}
+          />
         </div>
       </main>
     </div>
