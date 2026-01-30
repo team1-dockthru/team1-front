@@ -12,7 +12,7 @@ import Pagination from "@/components/common/PageButton/Pagination/Pagination";
 import RejectModal from "@/components/common/RejectModal/RejectModal";
 import PlusIcon from "@/assets/icons/ic-plus-s.svg";
 import { getCurrentUser } from "@/services/user/apiUserService";
-import { getChallenges, getChallengeRequests, getChallengeRequestDetail, deleteChallenge, deleteChallengeAsAdmin } from "@/services/challenge";
+import { getChallenges, getMyChallenges, getChallengeRequests, getChallengeRequestDetail, deleteChallenge, deleteChallengeAsAdmin } from "@/services/challenge";
 import { toast } from "@/hooks/use-toast";
 
 const TAB_ITEMS = [
@@ -103,6 +103,8 @@ export default function MyChallengesPage() {
   const [loadError, setLoadError] = useState("");
   const [appliedLoadError, setAppliedLoadError] = useState("");
   const [participatingChallenges, setParticipatingChallenges] = useState([]);
+  const [createdChallenges, setCreatedChallenges] = useState([]);
+  const [createdChallengesDebug, setCreatedChallengesDebug] = useState([]);
   const [completedChallenges, setCompletedChallenges] = useState([]);
   const [appliedChallenges, setAppliedChallenges] = useState([]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -137,6 +139,21 @@ export default function MyChallengesPage() {
     if (!userId) return;
     let isActive = true;
 
+    const getRequestStatus = (request) => {
+      const raw =
+        request?.requestStatus ??
+        request?.status ??
+        request?.request_status ??
+        "";
+      return String(raw).trim().toUpperCase();
+    };
+
+    const normalizeList = (value) => {
+      if (Array.isArray(value)) return value;
+      if (value && Array.isArray(value.data)) return value.data;
+      return [];
+    };
+
     const mapChallengeToCard = (challenge, tab) => {
       const participantCount = challenge?._count?.participants || 0;
       const maxParticipants = challenge?.maxParticipants || 0;
@@ -168,16 +185,19 @@ export default function MyChallengesPage() {
       };
     };
 
-    const mapRequestToRow = (request) => ({
-      id: request.id,
-      field: request.field,
-      docType: getDocTypeLabel(request.docType),
-      title: request.title,
-      capacity: request.maxParticipants,
-      appliedAt: formatShortDate(request.createdAt),
-      deadline: formatShortDate(request.deadlineAt),
-      status: REQUEST_STATUS_LABEL_MAP[request.requestStatus] || request.requestStatus,
-    });
+    const mapRequestToRow = (request) => {
+      const statusKey = getRequestStatus(request);
+      return {
+        id: request.id,
+        field: request.field,
+        docType: getDocTypeLabel(request.docType),
+        title: request.title,
+        capacity: request.maxParticipants,
+        appliedAt: formatShortDate(request.createdAt),
+        deadline: formatShortDate(request.deadlineAt),
+        status: REQUEST_STATUS_LABEL_MAP[statusKey] || request.requestStatus || request.status,
+      };
+    };
     const mapRequestToChallengeCard = (request) => {
       const linkedChallengeId =
         request?.challengeId ||
@@ -217,18 +237,21 @@ export default function MyChallengesPage() {
       setLoadError("");
       setAppliedLoadError("");
 
-      const [inProgressResult, closedResult, requestsResult] = await Promise.allSettled([
-        getChallenges({ userId, challengeStatus: "IN_PROGRESS" }),
-        getChallenges({ userId, challengeStatus: "CLOSED" }),
+      const [inProgressResult, closedResult, requestsResult, createdInProgressResult] = await Promise.allSettled([
+        getMyChallenges({ challengeStatus: "IN_PROGRESS" }),
+        getMyChallenges({ challengeStatus: "CLOSED" }),
         getChallengeRequests({ userId }),
+        getChallenges({ userId }),
       ]);
 
       if (!isActive) return;
 
       let participatingCards = [];
+      let createdCards = [];
 
       if (inProgressResult.status === "fulfilled") {
-        participatingCards = (inProgressResult.value || []).map((challenge) =>
+        const inProgressList = normalizeList(inProgressResult.value);
+        participatingCards = inProgressList.map((challenge) =>
           mapChallengeToCard(challenge, "participating")
         );
         setIsParticipatingLoading(false);
@@ -238,10 +261,9 @@ export default function MyChallengesPage() {
       }
 
       if (closedResult.status === "fulfilled") {
+        const closedList = normalizeList(closedResult.value);
         setCompletedChallenges(
-          (closedResult.value || []).map((challenge) =>
-            mapChallengeToCard(challenge, "completed")
-          )
+          closedList.map((challenge) => mapChallengeToCard(challenge, "completed"))
         );
         setIsCompletedLoading(false);
       } else if (!loadError) {
@@ -249,14 +271,36 @@ export default function MyChallengesPage() {
         setIsCompletedLoading(false);
       }
 
+      const createdInProgressListRaw =
+        createdInProgressResult.status === "fulfilled"
+          ? normalizeList(createdInProgressResult.value)
+          : [];
+      const createdInProgressList = createdInProgressListRaw.filter((challenge) => {
+        const statusValue = String(challenge?.challengeStatus || "").trim().toUpperCase();
+        return !statusValue || statusValue === "IN_PROGRESS";
+      });
+      const createdSource =
+        createdInProgressListRaw.length > 0
+          ? createdInProgressListRaw
+          : createdInProgressList;
+      createdCards = createdSource.map((challenge) =>
+        mapChallengeToCard(challenge, "participating")
+      );
+      setCreatedChallenges(createdCards);
+      setCreatedChallengesDebug(createdSource);
+
+      const baseMerged = [...participatingCards, ...createdCards];
+      const baseUnique = Array.from(new Map(baseMerged.map((item) => [item.id, item])).values());
+      setParticipatingChallenges(baseUnique);
+
       if (requestsResult.status === "fulfilled") {
-        const requests = requestsResult.value || [];
+        const requests = normalizeList(requestsResult.value);
         setAppliedChallenges(requests.map(mapRequestToRow));
         const approvedRequests = requests.filter(
-          (request) => String(request.requestStatus || "").toUpperCase() === "APPROVED"
+          (request) => getRequestStatus(request) === "APPROVED"
         );
         const approvedCards = approvedRequests.map(mapRequestToChallengeCard);
-        const merged = [...participatingCards, ...approvedCards];
+        const merged = [...baseUnique, ...approvedCards];
         const unique = Array.from(new Map(merged.map((item) => [item.id, item])).values());
         setParticipatingChallenges(unique);
         setIsAppliedLoading(false);
@@ -265,7 +309,6 @@ export default function MyChallengesPage() {
         setAppliedLoadError(
           requestsResult.reason?.message || "신청 목록을 불러오지 못했습니다."
         );
-        setParticipatingChallenges(participatingCards);
         setIsAppliedLoading(false);
       }
 
@@ -278,10 +321,23 @@ export default function MyChallengesPage() {
     };
   }, [userId]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.__myChallengesDebug = {
+        userId,
+        createdChallenges,
+        createdChallengesRaw: createdChallengesDebug,
+        participatingChallenges,
+      };
+    }
+  }, [userId, createdChallenges, createdChallengesDebug, participatingChallenges]);
+
   const filteredChallenges = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
     const targetList =
-      activeTab === "participating" ? participatingChallenges : completedChallenges;
+      activeTab === "participating"
+        ? (participatingChallenges.length > 0 ? participatingChallenges : createdChallenges)
+        : completedChallenges;
     return targetList.filter((challenge) => {
       const matchesSearch = normalizedQuery
         ? challenge.title.toLowerCase().includes(normalizedQuery)
@@ -384,7 +440,16 @@ export default function MyChallengesPage() {
   return (
     <div className="min-h-screen bg-[var(--gray-50)]">
       <Gnb
-        user={{ name: "체다치즈", role: "일반" }}
+        isLoggedIn={Boolean(currentUser)}
+        role={isAdmin ? "admin" : "member"}
+        user={
+          currentUser
+            ? {
+                name: currentUser.nickname || currentUser.name || "사용자",
+                role: isAdmin ? "관리자" : "일반",
+              }
+            : { name: "사용자", role: "일반" }
+        }
         onMyChallenge={() => router.push("/challenges-my")}
       />
       <Container className="py-10 md:py-[60px]">

@@ -41,10 +41,12 @@ export default function Gnb({
   const router = useRouter();
   const pathname = usePathname();
   const clearToken = useAuthStore((state) => state.clearToken);
+  const storedToken = useAuthStore((state) => state.token);
   const [localNotifications, setLocalNotifications] = useState(notifications);
   const hasUnread = localNotifications.some((noti) => !noti?.readAt);
   const derivedHasNotification =
     typeof hasNotification === "boolean" ? hasNotification : hasUnread;
+  const resolvedIsLoggedIn = Boolean(isLoggedIn || storedToken);
   const lastNotificationsSigRef = useRef("");
 
   useEffect(() => {
@@ -70,7 +72,7 @@ export default function Gnb({
   useEffect(() => {
     let isActive = true;
     const fetchNotifications = async () => {
-      if (!isLoggedIn || notifications.length > 0) return;
+      if (!resolvedIsLoggedIn || notifications.length > 0) return;
       try {
         const result = await getNotifications({ includeRead: true, limit: 10 });
         if (!isActive) return;
@@ -84,13 +86,13 @@ export default function Gnb({
     return () => {
       isActive = false;
     };
-  }, [isLoggedIn, notifications.length]);
+  }, [resolvedIsLoggedIn, notifications.length]);
   const BellIcon = derivedHasNotification ? BellNoti : BellEmpty;
   const ProfileIcon = role === 'admin' ? ProfileAdmin : ProfileMember;
   const isAdmin = role === 'admin';
   const displayUserName = user?.nickname || user?.name || userDropdownProps?.user?.name || '사용자';
   const displayUserRole = role === 'admin' ? '관리자' : (userDropdownProps?.user?.role || '일반');
-  const shouldUseUserDropdown = useUserDropdown || isLoggedIn;
+  const shouldUseUserDropdown = useUserDropdown || resolvedIsLoggedIn;
   const resolvedUserDropdownProps = {
     user: userDropdownProps?.user || { name: displayUserName, role: displayUserRole },
     ...userDropdownProps,
@@ -205,7 +207,7 @@ export default function Gnb({
             )}
           </div>
 
-          {!isLoggedIn ? (
+          {!resolvedIsLoggedIn ? (
             <Link
               href="/login"
               className={cn(

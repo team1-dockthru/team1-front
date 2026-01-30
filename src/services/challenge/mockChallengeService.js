@@ -150,3 +150,13 @@ export async function getChallenges() {
   await new Promise((resolve) => setTimeout(resolve, 300));
   return MOCK_CHALLENGES;
 }
+
+export async function getMyChallenges({ challengeStatus } = {}) {
+  console.log('[Mock] getMyChallenges 호출', challengeStatus);
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  if (!challengeStatus) return MOCK_CHALLENGES;
+  const normalized = String(challengeStatus).toUpperCase();
+  return MOCK_CHALLENGES.filter(
+    (challenge) => String(challenge?.challengeStatus || '').toUpperCase() === normalized
+  );
+}
