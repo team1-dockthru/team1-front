@@ -15,6 +15,7 @@ import AdminProfileIcon from '@/assets/icons/ic-profile-admin.svg';
 export default function UserDropdown({
   user = { name: '사용자', role: '일반' },
   onMyChallenge,
+  onMyChallengePrefetch,
   onLogout,
   className,
 }) {
@@ -33,6 +34,12 @@ export default function UserDropdown({
   }, []);
 
   const handleToggle = () => setIsOpen((prev) => !prev);
+
+  useEffect(() => {
+    if (isOpen && onMyChallengePrefetch) {
+      onMyChallengePrefetch();
+    }
+  }, [isOpen, onMyChallengePrefetch]);
 
   const isAdmin = user.role === '어드민' || user.role === '관리자';
   const displayName = user.nickname || user.name;
@@ -78,6 +85,7 @@ export default function UserDropdown({
             <li>
               <button
                 type="button"
+                onMouseEnter={onMyChallengePrefetch}
                 onClick={() => {
                   if (onMyChallenge) onMyChallenge();
                   setIsOpen(false);

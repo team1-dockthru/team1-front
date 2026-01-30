@@ -168,6 +168,14 @@ export default function MyChallengesPage() {
       return {
         id: challenge.id,
         originalWorkId: challenge?.originalWorkId || challenge?.original_work_id || null,
+        workId:
+          challenge?.workId ||
+          challenge?.work_id ||
+          challenge?.myWorkId ||
+          challenge?.my_work_id ||
+          challenge?.originalWorkId ||
+          challenge?.original_work_id ||
+          null,
         tab,
         title: challenge.title,
         tags: [
@@ -625,48 +633,67 @@ export default function MyChallengesPage() {
           </div>
         ) : filteredChallenges.length > 0 ? (
           <div className="flex flex-col gap-6">
-        {filteredChallenges.map((challenge) => (
-              <ChallengeCard
-                key={challenge.id}
-                {...challenge}
-                isAdmin={isAdmin}
-                showAction={!isAdmin && activeTab === "participating"}
-                onAction={async () => {
-                  const linkedId = challenge.linkedChallengeId || challenge.id;
-                  if (String(linkedId).startsWith("request-")) {
-                    const requestId =
-                      challenge.requestId ||
-                      String(linkedId).replace("request-", "");
-                    try {
-                      const detail = await getChallengeRequestDetail(requestId);
-                      const resolvedId =
-                        detail?.challengeId ||
-                        detail?.challenge_id ||
-                        detail?.challenge?.id ||
-                        detail?.challenges?.[0]?.id ||
-                        null;
-                      if (resolvedId) {
-                        router.push(`/challenge/${resolvedId}`);
-                        return;
-                      }
-                      toast({
-                        title: "이동할 챌린지가 없습니다.",
-                        description: "승인된 챌린지가 아직 생성되지 않았습니다.",
-                      });
-                    } catch (error) {
-                      toast({
-                        title: "이동 실패",
-                        description: error.message || "챌린지를 불러오지 못했습니다.",
-                      });
-                    }
+        {filteredChallenges.map((challenge) => {
+          const isCompletedTab = activeTab === "completed";
+          const canShowWorkButton = Boolean(challenge.workId);
+
+          return (
+            <ChallengeCard
+              key={challenge.id}
+              {...challenge}
+              isAdmin={isAdmin}
+              showAction={!isAdmin && (activeTab === "participating" || isCompletedTab)}
+              actionLabel={isCompletedTab ? "내 작업물 보기" : "도전 계속하기"}
+              actionVariant={isCompletedTab ? "work" : "primary"}
+              onAction={async () => {
+                if (isCompletedTab) {
+                  if (!canShowWorkButton) {
+                    toast({
+                      title: "작업물을 찾을 수 없습니다.",
+                      description: "연결된 작업물이 아직 없습니다.",
+                    });
                     return;
                   }
-                  router.push(`/challenge/${linkedId}`);
-                }}
-                onEdit={() => handleEditChallenge(challenge.id)}
-                onDelete={() => handleDeleteChallenge(challenge.id)}
-              />
-            ))}
+                  router.push(`/workDetail/${challenge.workId}`);
+                  return;
+                }
+
+                const linkedId = challenge.linkedChallengeId || challenge.id;
+                if (String(linkedId).startsWith("request-")) {
+                  const requestId =
+                    challenge.requestId ||
+                    String(linkedId).replace("request-", "");
+                  try {
+                    const detail = await getChallengeRequestDetail(requestId);
+                    const resolvedId =
+                      detail?.challengeId ||
+                      detail?.challenge_id ||
+                      detail?.challenge?.id ||
+                      detail?.challenges?.[0]?.id ||
+                      null;
+                    if (resolvedId) {
+                      router.push(`/challenge/${resolvedId}`);
+                      return;
+                    }
+                    toast({
+                      title: "이동할 챌린지가 없습니다.",
+                      description: "승인된 챌린지가 아직 생성되지 않았습니다.",
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "이동 실패",
+                      description: error.message || "챌린지를 불러오지 못했습니다.",
+                    });
+                  }
+                  return;
+                }
+                router.push(`/challenge/${linkedId}`);
+              }}
+              onEdit={() => handleEditChallenge(challenge.id)}
+              onDelete={() => handleDeleteChallenge(challenge.id)}
+            />
+          );
+        })}
           </div>
         ) : (
           <div className="flex min-h-[420px] items-center justify-center text-center">

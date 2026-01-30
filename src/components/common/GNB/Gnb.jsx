@@ -15,6 +15,7 @@ import UserDropdown from "@/components/common/UserDropdown/UserDropdown";
 import { cn } from "@/lib/utils";
 import NotificationModal from "@/components/common/NotificationModal/NotificationModal";
 import { getCurrentUser, logout } from "@/services/user";
+import { getChallenges, getChallengeRequests, getMyChallenges } from "@/services/challenge";
 import { useAuthStore } from "@/store/authStore";
 import { getNotifications, markNotificationRead } from "@/services/notification";
 
@@ -44,6 +45,7 @@ export default function Gnb({
   const storedToken = useAuthStore((state) => state.token);
   const [isClient, setIsClient] = useState(false);
   const [resolvedUser, setResolvedUser] = useState(user || null);
+  const prefetchMyChallengesRef = useRef(false);
   const [localNotifications, setLocalNotifications] = useState(notifications);
   const hasUnread = localNotifications.some((noti) => !noti?.readAt);
   const derivedHasNotification =
@@ -157,6 +159,19 @@ export default function Gnb({
         clearToken();
         window.location.href = "/";
       }),
+  };
+
+  const prefetchMyChallenges = () => {
+    if (prefetchMyChallengesRef.current) return;
+    prefetchMyChallengesRef.current = true;
+    router.prefetch("/challenges-my");
+    const userId = resolvedUser?.id;
+    if (!userId) return;
+    void getMyChallenges({ challengeStatus: "IN_PROGRESS" });
+    void getMyChallenges({ challengeStatus: "CLOSED" });
+    void getMyChallenges({ challengeStatus: "COMPLETED" });
+    void getChallengeRequests({ userId });
+    void getChallenges({ userId });
   };
 
   const [isDevMenuOpen, setIsDevMenuOpen] = useState(false);
@@ -302,6 +317,7 @@ export default function Gnb({
               {shouldUseUserDropdown ? (
                 <UserDropdown
                   {...resolvedUserDropdownProps}
+                  onMyChallengePrefetch={prefetchMyChallenges}
                   user={{
                     ...resolvedUserDropdownProps.user,
                     role: isAdmin ? "관리자" : resolvedUserDropdownProps.user.role,
