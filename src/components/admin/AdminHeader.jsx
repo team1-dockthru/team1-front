@@ -3,7 +3,7 @@
 import Gnb from '@/components/common/GNB/Gnb';
 
 export default function AdminHeader({
-  user = { name: '체다치즈', role: '어드민' },
+  user,
   onLogout,
   ...gnbProps
 }) {

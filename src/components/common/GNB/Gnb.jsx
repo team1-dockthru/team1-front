@@ -107,8 +107,10 @@ export default function Gnb({
         try {
           await logout();
         } catch (error) {
-          alert(error.message || "로그아웃에 실패했습니다.");
-          return;
+          const message = error?.message || "";
+          if (message && !message.includes("토큰이 만료")) {
+            alert(message || "로그아웃에 실패했습니다.");
+          }
         }
         clearToken();
         window.location.href = "/";

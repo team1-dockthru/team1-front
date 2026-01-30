@@ -8,7 +8,7 @@ import Search from '@/components/common/Search/Search';
 import Sort from '@/components/common/Sort/Sort';
 import Pagination from '@/components/common/PageButton/Pagination/Pagination';
 import { cn } from '@/lib/utils';
-import { logout } from '@/services/user';
+import { getCurrentUser, logout } from '@/services/user';
 import { useAuthStore } from '@/store/authStore';
 const SORT_OPTIONS = [
   '전체',
@@ -70,12 +70,31 @@ function getStatusStyles(status) {
 export default function ChallengeApplicationPage() {
   const router = useRouter();
   const clearToken = useAuthStore((state) => state.clearToken);
+  const [currentUser, setCurrentUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortValue, setSortValue] = useState('전체');
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [challenges, setChallenges] = useState([]);
+
+  useEffect(() => {
+    let isActive = true;
+    const fetchUser = async () => {
+      try {
+        const response = await getCurrentUser();
+        if (!isActive) return;
+        setCurrentUser(response?.user || null);
+      } catch {
+        if (!isActive) return;
+        setCurrentUser(null);
+      }
+    };
+    fetchUser();
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   useEffect(() => {
     let isActive = true;
@@ -164,8 +183,10 @@ export default function ChallengeApplicationPage() {
     try {
       await logout();
     } catch (error) {
-      alert(error.message || '로그아웃에 실패했습니다.');
-      return;
+      const message = error?.message || '';
+      if (message && !message.includes('토큰이 만료')) {
+        alert(message || '로그아웃에 실패했습니다.');
+      }
     }
     clearToken();
     window.location.href = '/';
@@ -180,7 +201,10 @@ export default function ChallengeApplicationPage() {
     <div className="min-h-screen bg-white">
       <AdminHeader
         isLoggedIn={true}
-        user={{ name: '체다치즈', role: '어드민' }}
+        user={{
+          name: currentUser?.nickname || currentUser?.name || '관리자',
+          role: '관리자',
+        }}
         onLogout={handleLogout}
         onApprovalPending={handleApprovalPending}
       />
