@@ -80,44 +80,50 @@ export default function ParticipationStatus({ participants }) {
 
       {/* 참여자 목록 */}
       <List>
-        {displayParticipants.map((participant) => (
-          <ListItem
-            key={participant.userId}
-            left={
-              <div className="flex items-center gap-4">
-                {/* 순위 뱃지 - 타원형 */}
-                <div className="flex min-w-[60px] items-center justify-center gap-1 rounded-full bg-[var(--brand-black)] px-3 py-1 text-[var(--brand-yellow)]">
-                  {/* 최다 좋아요 = 1위 (공동 1위 포함) */}
-                  {participant.likeCount === maxLikes && <CrownIcon />}
-                  <span className="font-14-bold">
-                    {participant.rank < 10 ? `0${participant.rank}` : participant.rank}
-                  </span>
+        {displayParticipants.map((participant, index) => {
+          const rank = participant.rank || (startIndex + index + 1);
+          const likeCount = participant.likeCount || 0;
+          const isTopLiker = maxLikes > 0 && likeCount === maxLikes;
+          
+          return (
+            <ListItem
+              key={participant.userId || participant.participantId || index}
+              left={
+                <div className="flex items-center gap-4">
+                  {/* 순위 뱃지 - 타원형 */}
+                  <div className="flex min-w-[60px] items-center justify-center gap-1 rounded-full bg-[var(--brand-black)] px-3 py-1 text-[var(--brand-yellow)]">
+                    {/* 최다 좋아요 = 1위 (공동 1위 포함) */}
+                    {isTopLiker && <CrownIcon />}
+                    <span className="font-14-bold">
+                      {rank < 10 ? `0${rank}` : rank}
+                    </span>
+                  </div>
+                  {/* 프로필 */}
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-yellow)]">
+                    <ProfileIcon className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-                {/* 프로필 */}
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-yellow)]">
-                  <ProfileIcon className="h-6 w-6 text-white" />
+              }
+              title={participant.nickname || '참여자'}
+              subtitle={participant.role || '일반'}
+              meta={
+                <>
+                  <HeartIcon />
+                  <span>{likeCount.toLocaleString()}</span>
+                </>
+              }
+              action={
+                <div className="flex cursor-pointer items-center gap-1">
+                  <span>작업물 보기</span>
+                  <ArrowRightIcon className="h-5 w-5" />
                 </div>
-              </div>
-            }
-            title={participant.nickname}
-            subtitle={participant.role || (participant.rank === 1 ? '전문가' : '일반')}
-            meta={
-              <>
-                <HeartIcon />
-                <span>{participant.likeCount.toLocaleString()}</span>
-              </>
-            }
-            action={
-              <div className="flex cursor-pointer items-center gap-1">
-                <span>작업물 보기</span>
-                <ArrowRightIcon className="h-5 w-5" />
-              </div>
-            }
-            onClick={() => {
-              console.log('작업물 보기:', participant.userId);
-            }}
-          />
-        ))}
+              }
+              onClick={() => {
+                console.log('작업물 보기:', participant.userId);
+              }}
+            />
+          );
+        })}
       </List>
     </div>
   );

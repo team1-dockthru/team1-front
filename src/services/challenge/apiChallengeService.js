@@ -251,12 +251,16 @@ function adaptTranslation(apiTranslation) {
  * 참여자 변환
  */
 function adaptParticipant(apiParticipant) {
+  // 백엔드 응답: { id, userId, user: { id, nickname, profileImage } }
+  const userData = apiParticipant.user || apiParticipant;
   return {
-    userId: String(apiParticipant.user_id),
-    nickname: apiParticipant.nickname,
+    participantId: apiParticipant.id,
+    userId: String(userData.user_id || userData.id || apiParticipant.userId),
+    nickname: userData.nickname || apiParticipant.nickname || '',
+    profileImage: userData.profileImage || 'USER',
     rank: apiParticipant.rank,
-    likeCount: apiParticipant.like_count,
-    role: apiParticipant.role || (apiParticipant.rank === 1 ? '전문가' : '일반'), // 추가
+    likeCount: apiParticipant.like_count || 0,
+    role: apiParticipant.role || '일반',
   };
 }
 
