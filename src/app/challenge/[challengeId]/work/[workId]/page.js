@@ -15,7 +15,7 @@ import {
   hasDraftsForWork,
   saveDraft,
 } from '@/utils/draftStorage';
-import { getChallengeDetail } from '@/services/challenge';
+import { getChallengeDetail, createWork } from '@/services/challenge';
 import ListIcon from '@/assets/icons/ic-list.svg';
 
 export default function WorkPage({ params }) {
@@ -169,10 +169,36 @@ export default function WorkPage({ params }) {
     }));
   }, []);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = useCallback(async () => {
-    console.log('제출 데이터:', { challengeId, workId, ...workData });
-    alert('제출 기능은 추후 구현 예정입니다.');
-  }, [challengeId, workId, workData]);
+    if (!workData.title.trim()) {
+      alert('제목을 입력해주세요.');
+      return;
+    }
+    if (!workData.content.trim()) {
+      alert('번역 내용을 입력해주세요.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const result = await createWork(
+        challengeId,
+        workData.title,
+        workData.content,
+        sourceContent // originalUrl
+      );
+      console.log('제출 성공:', result);
+      alert('제출이 완료되었습니다.');
+      router.push(`/challengeDetail/${challengeId}`);
+    } catch (error) {
+      console.error('제출 실패:', error);
+      alert(error.message || '제출에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [challengeId, workData.title, workData.content, sourceContent, router]);
 
   const handleDismissDraftNotice = useCallback(() => {
     setDraftState(prev => ({
