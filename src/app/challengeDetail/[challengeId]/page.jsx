@@ -125,7 +125,7 @@ export default function ChallengeDetailPage({ params }) {
           <StatusBanner 
             status={challengeData.status} 
             deadline={challengeData.deadline}
-            participantCount={challengeData.participants?.length || 0}
+            participantCount={challengeData.participantCount || 0}
             maxParticipants={challengeData.maxParticipants || 15}
           />
 
@@ -152,7 +152,7 @@ export default function ChallengeDetailPage({ params }) {
             <div className="hidden lg:block lg:w-[340px]">
               <ChallengeSidebar
                 deadline={challengeData.deadline}
-                participantCount={challengeData.participants?.length || 0}
+                participantCount={challengeData.participantCount || 0}
                 originalWorkId={challengeData.originalWorkId}
                 isParticipating={challengeData.isParticipating}
                 status={challengeData.status}
@@ -166,7 +166,7 @@ export default function ChallengeDetailPage({ params }) {
           <div className="mb-6 lg:hidden">
             <ChallengeSidebar
               deadline={challengeData.deadline}
-              participantCount={challengeData.participants?.length || 0}
+              participantCount={challengeData.participantCount || 0}
               originalWorkId={challengeData.originalWorkId}
               isParticipating={challengeData.isParticipating}
               status={challengeData.status}
