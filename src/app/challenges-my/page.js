@@ -239,6 +239,15 @@ export default function MyChallengesPage() {
 
   useEffect(() => {
     let isActive = true;
+    let didTimeout = false;
+    const timeoutId = setTimeout(() => {
+      if (!isActive) return;
+      didTimeout = true;
+      setLoadError("데이터를 불러오는 데 시간이 오래 걸립니다. 잠시 후 다시 시도해주세요.");
+      setIsParticipatingLoading(false);
+      setIsCompletedLoading(false);
+    }, 8000);
+
     const fetchCoreChallenges = async () => {
       setIsParticipatingLoading(true);
       setIsCompletedLoading(true);
@@ -285,11 +294,17 @@ export default function MyChallengesPage() {
         setIsCompletedLoading(false);
       }
 
+      if (didTimeout) {
+        setLoadError("");
+      }
+      clearTimeout(timeoutId);
+
     };
 
     fetchCoreChallenges();
     return () => {
       isActive = false;
+      clearTimeout(timeoutId);
     };
   }, []);
 
