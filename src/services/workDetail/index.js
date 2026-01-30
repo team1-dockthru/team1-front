@@ -11,6 +11,7 @@ export const {
   getWorkDetail,
   toggleLike,
   createFeedback,
+  getFeedbacks,
   loadMoreFeedbacks,
   updateWork,
   deleteWork,

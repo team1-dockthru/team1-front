@@ -76,12 +76,11 @@ export default function WorkDetailPage({ params }) {
   const handleFeedbackSubmit = async (content) => {
     try {
       await createFeedback(workId, content);
-      // 피드백 작성 후 전체 데이터 새로고침
-      const updated = await getWorkDetail(workId);
-      setWorkData(updated);
+      // 피드백 작성 성공 - FeedbackSection에서 목록 재로드 처리
     } catch (err) {
       console.error('피드백 작성 실패:', err);
       alert('피드백 작성에 실패했습니다.');
+      throw err; // FeedbackSection에서 에러 처리할 수 있도록 throw
     }
   };
 

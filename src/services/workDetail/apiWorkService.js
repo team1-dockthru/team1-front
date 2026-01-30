@@ -35,18 +35,17 @@ export async function getWorkDetail(workId) {
 }
 
 /**
- * 좋아요 토글
+ * 좋아요 토글 - POST /works/{workId}/likes
  */
-export async function toggleLike(workId, isLiked) {
+export async function toggleLike(workId) {
   const token = getStoredToken();
-  const method = isLiked ? 'DELETE' : 'POST';
   const headers = { 'Content-Type': 'application/json' };
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
 
   const response = await fetch(`${API_BASE_URL}/works/${workId}/likes`, { 
-    method,
+    method: 'POST',
     headers
   });
   
@@ -58,7 +57,7 @@ export async function toggleLike(workId, isLiked) {
 }
 
 /**
- * 피드백 작성
+ * 피드백 작성 - POST /works/{workId}/feedbacks
  */
 export async function createFeedback(workId, content) {
   const token = getStoredToken();
@@ -70,7 +69,7 @@ export async function createFeedback(workId, content) {
   const response = await fetch(`${API_BASE_URL}/works/${workId}/feedbacks`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ workId: Number(workId), content }),
   });
   
   if (!response.ok) {
@@ -81,9 +80,9 @@ export async function createFeedback(workId, content) {
 }
 
 /**
- * 피드백 더보기
+ * 피드백 목록 조회 - GET /works/{workId}/feedbacks
  */
-export async function loadMoreFeedbacks(workId, page, size = 3) {
+export async function getFeedbacks(workId, page = 1, limit = 5) {
   const token = getStoredToken();
   const headers = { 'Content-Type': 'application/json' };
   if (token) {
@@ -91,7 +90,7 @@ export async function loadMoreFeedbacks(workId, page, size = 3) {
   }
 
   const response = await fetch(
-    `${API_BASE_URL}/works/${workId}/feedbacks?page=${page}&size=${size}`,
+    `${API_BASE_URL}/works/${workId}/feedbacks?page=${page}&limit=${limit}`,
     { headers }
   );
   
@@ -101,7 +100,22 @@ export async function loadMoreFeedbacks(workId, page, size = 3) {
   
   const result = await response.json();
   const data = result?.data || result;
-  return data.feedbacks.map(adaptFeedbackToCommon);
+  const feedbacks = Array.isArray(data) ? data : (data.feedbacks || data.items || []);
+  
+  return {
+    feedbacks: feedbacks.map(adaptFeedbackToCommon),
+    totalCount: result?.totalCount || data?.totalCount || feedbacks.length,
+    totalPages: result?.totalPages || data?.totalPages || 1,
+    currentPage: result?.currentPage || data?.currentPage || page,
+  };
+}
+
+/**
+ * 피드백 더보기 (하위 호환용)
+ */
+export async function loadMoreFeedbacks(workId, page, size = 5) {
+  const result = await getFeedbacks(workId, page, size);
+  return result.feedbacks;
 }
 
 /**
@@ -153,24 +167,36 @@ export async function deleteWork(workId) {
  * API 작업물 응답 → 통일된 인터페이스
  */
 function adaptWorkToCommon(apiData) {
+  // challenge 정보에서 field와 docType 가져오기
+  const challenge = apiData.challenge || {};
+  const field = apiData.field || challenge.field || '';
+  const docType = apiData.docType || challenge.docType || '';
+  
+  // docType을 한글로 변환
+  const getTypeLabel = (dt) => {
+    if (dt === 'OFFICIAL_DOCUMENT') return '공식문서';
+    if (dt === 'BLOG') return '블로그';
+    return dt || '';
+  };
+
   return {
     workId: String(apiData.id || apiData.work_id),
     title: apiData.title,
-    type: apiData.docType === 'OFFICIAL_DOCUMENT' || apiData.doc_type === 0 ? '공식문서' : '블로그',
-    category: apiData.field,
+    type: field, // field가 type (예: Next.js, API 등)
+    category: getTypeLabel(docType), // docType이 category (공식문서/블로그)
     author: {
-      userId: String(apiData.author?.userId || apiData.author?.user_id || apiData.author?.id),
-      nickname: apiData.author?.nickname,
-      profileImage: apiData.author?.profileImg || apiData.author?.profileImage || apiData.author?.profile_img,
+      userId: String(apiData.author?.userId || apiData.author?.user_id || apiData.author?.id || apiData.user?.id),
+      nickname: apiData.author?.nickname || apiData.user?.nickname,
+      profileImage: apiData.author?.profileImg || apiData.author?.profileImage || apiData.author?.profile_img || apiData.user?.profileImage,
     },
     likes: {
-      count: apiData.likeCount || apiData.like_count || 0,
+      count: apiData.likeCount || apiData.like_count || apiData._count?.likes || 0,
       isLiked: apiData.isLiked ?? apiData.is_liked ?? false,
     },
     createdAt: formatDate(apiData.createdAt || apiData.created_at),
     content: apiData.content,
     feedbacks: (apiData.feedbacks || []).map(adaptFeedbackToCommon),
-    totalFeedbackCount: apiData.totalFeedbackCount || apiData.total_feedback_count || 0,
+    totalFeedbackCount: apiData.totalFeedbackCount || apiData.total_feedback_count || apiData._count?.feedbacks || 0,
     isMine: apiData.isMine ?? apiData.is_mine ?? false,
   };
 }
