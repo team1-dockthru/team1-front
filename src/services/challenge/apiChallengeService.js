@@ -226,24 +226,45 @@ export async function deleteChallenge(challengeId) {
  * API 응답을 공통 인터페이스로 변환
  */
 function adaptChallengeToCommon(apiData) {
+  // 참여자 수: _count.participants 또는 participant_count
+  const participantCount = apiData._count?.participants ?? apiData.participant_count ?? 0;
+  // 최대 참여자 수
+  const maxParticipants = apiData.maxParticipants ?? apiData.max_participants ?? 0;
+  // 생성자 정보: user 또는 author
+  const authorData = apiData.user || apiData.author;
+  // 마감일: deadlineAt 또는 deadline
+  const deadlineValue = apiData.deadlineAt || apiData.deadline;
+  // 챌린지 상태 변환
+  const getStatus = () => {
+    const status = apiData.challengeStatus || apiData.status;
+    if (status === 'CLOSED' || status === 'COMPLETED') return 'closed';
+    if (participantCount >= maxParticipants && maxParticipants > 0) return 'recruitClosed';
+    return 'live';
+  };
+
   return {
     challengeId: String(apiData.challenge_id || apiData.id),
     title: apiData.title,
-    type: apiData.doc_type === 0 ? '공식문서' : '블로그',
-    category: apiData.category,
-    description: apiData.description,
+    type: apiData.docType === 'OFFICIAL_DOCUMENT' || apiData.doc_type === 0 ? '공식문서' : '블로그',
+    category: apiData.field || apiData.category,
+    description: apiData.content || apiData.description,
     author: {
-      userId: String(apiData.author?.user_id || apiData.author?.id),
-      nickname: apiData.author?.nickname,
+      userId: String(authorData?.user_id || authorData?.id || ''),
+      nickname: authorData?.nickname || '',
+      profileImage: authorData?.profileImage || 'USER',
     },
-    status: apiData.status, // 'live' | 'working' | 'closed' | 'recruitClosed'
-    deadline: formatDate(apiData.deadline),
-    participantCount: apiData.participant_count,
-    originalWorkId: String(apiData.original_work_id),
-    isMine: apiData.is_mine,
-    isParticipating: apiData.is_participating,
+    status: getStatus(),
+    deadline: formatDate(deadlineValue),
+    participantCount: participantCount,
+    maxParticipants: maxParticipants,
+    originalWorkId: String(apiData.original_work_id || ''),
+    isMine: apiData.is_mine ?? false,
+    isParticipating: apiData.is_participating ?? false,
     topTranslations: (apiData.top_translations || []).map(adaptTranslation),
     participants: (apiData.participants || []).map(adaptParticipant),
+    // 원본 데이터도 포함 (필요시 사용)
+    sourceUrl: apiData.sourceUrl || apiData.source_url,
+    worksCount: apiData._count?.works ?? 0,
   };
 }
 
