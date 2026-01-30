@@ -43,6 +43,8 @@ export default function Home() {
       isActive = false;
     };
   }, []);
+  const startLink = user?.isLoggedIn ? "/challenges-my" : "/login";
+
   return (
     <div className="min-h-screen bg-[var(--gray-50)] text-[var(--gray-900)]">
       <Gnb
@@ -69,7 +71,7 @@ export default function Home() {
               개발자의 새로운 영어 습관
             </h1>
             <div className="mt-8">
-              <Link href="/login">
+              <Link href={startLink}>
                 <Button variant="outline" size="lg">
                   번역 시작하기
                 </Button>
@@ -157,7 +159,7 @@ export default function Home() {
             <h3 className="text-2xl font-bold text-[var(--gray-900)]">
               함께 번역하고 성장하세요!
             </h3>
-            <Link href="/login">
+            <Link href={startLink}>
               <Button className="mt-6" size="lg">
                 번역 시작하기
               </Button>
