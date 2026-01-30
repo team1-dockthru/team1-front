@@ -110,6 +110,108 @@ export default function MyChallengesPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
 
+  const getRequestStatus = (request) => {
+    const raw =
+      request?.requestStatus ??
+      request?.status ??
+      request?.request_status ??
+      "";
+    return String(raw).trim().toUpperCase();
+  };
+
+  const normalizeList = (value) => {
+    if (Array.isArray(value)) return value;
+    if (value && Array.isArray(value.data)) return value.data;
+    return [];
+  };
+
+  const mergeUniqueById = (items = []) =>
+    Array.from(new Map(items.map((item) => [item.id, item])).values());
+
+  const mapChallengeToCard = (challenge, tab) => {
+    const participantCount = challenge?._count?.participants || 0;
+    const maxParticipants = challenge?.maxParticipants || 0;
+    const isFull = maxParticipants > 0 && participantCount >= maxParticipants;
+    const statusText = tab === "completed"
+      ? "챌린지가 마감되었어요"
+      : isFull
+        ? "모집이 완료된 상태에요"
+        : "";
+    return {
+      id: challenge.id,
+      originalWorkId: challenge?.originalWorkId || challenge?.original_work_id || null,
+      workId:
+        challenge?.workId ||
+        challenge?.work_id ||
+        challenge?.myWorkId ||
+        challenge?.my_work_id ||
+        challenge?.originalWorkId ||
+        challenge?.original_work_id ||
+        null,
+      tab,
+      title: challenge.title,
+      tags: [
+        {
+          text: challenge.field,
+          variant: getFieldVariant(challenge.field),
+        },
+        {
+          text: getDocTypeLabel(challenge.docType),
+          variant: getDocTypeVariant(challenge.docType),
+        },
+      ],
+      deadline: formatDeadline(challenge.deadlineAt),
+      participants: `${participantCount}/${maxParticipants} ${isFull ? "참여 완료" : "참여중"}`,
+      statusText: statusText || undefined,
+      isClosed: tab === "completed",
+    };
+  };
+
+  const mapRequestToRow = (request) => {
+    const statusKey = getRequestStatus(request);
+    return {
+      id: request.id,
+      field: request.field,
+      docType: getDocTypeLabel(request.docType),
+      title: request.title,
+      capacity: request.maxParticipants,
+      appliedAt: formatShortDate(request.createdAt),
+      deadline: formatShortDate(request.deadlineAt),
+      status: REQUEST_STATUS_LABEL_MAP[statusKey] || request.requestStatus || request.status,
+    };
+  };
+
+  const mapRequestToChallengeCard = (request) => {
+    const linkedChallengeId =
+      request?.challengeId ||
+      request?.challenge_id ||
+      request?.challenge?.id ||
+      request?.challenges?.[0]?.id ||
+      null;
+    const maxParticipants = request?.maxParticipants || 0;
+    return {
+      id: linkedChallengeId ? linkedChallengeId : `request-${request.id}`,
+      linkedChallengeId,
+      requestId: request?.id || null,
+      tab: "participating",
+      title: request.title,
+      tags: [
+        {
+          text: request.field,
+          variant: getFieldVariant(request.field),
+        },
+        {
+          text: getDocTypeLabel(request.docType),
+          variant: getDocTypeVariant(request.docType),
+        },
+      ],
+      deadline: formatDeadline(request.deadlineAt),
+      participants: `0/${maxParticipants} 참여중`,
+      statusText: undefined,
+      isClosed: false,
+    };
+  };
+
   useEffect(() => {
     let isActive = true;
     const fetchUser = async () => {
@@ -137,121 +239,15 @@ export default function MyChallengesPage() {
 
   useEffect(() => {
     let isActive = true;
-
-    const getRequestStatus = (request) => {
-      const raw =
-        request?.requestStatus ??
-        request?.status ??
-        request?.request_status ??
-        "";
-      return String(raw).trim().toUpperCase();
-    };
-
-    const normalizeList = (value) => {
-      if (Array.isArray(value)) return value;
-      if (value && Array.isArray(value.data)) return value.data;
-      return [];
-    };
-
-    const mergeUniqueById = (items = []) =>
-      Array.from(new Map(items.map((item) => [item.id, item])).values());
-
-    const mapChallengeToCard = (challenge, tab) => {
-      const participantCount = challenge?._count?.participants || 0;
-      const maxParticipants = challenge?.maxParticipants || 0;
-      const isFull = maxParticipants > 0 && participantCount >= maxParticipants;
-      const statusText = tab === "completed"
-        ? "챌린지가 마감되었어요"
-        : isFull
-          ? "모집이 완료된 상태에요"
-          : "";
-      return {
-        id: challenge.id,
-        originalWorkId: challenge?.originalWorkId || challenge?.original_work_id || null,
-        workId:
-          challenge?.workId ||
-          challenge?.work_id ||
-          challenge?.myWorkId ||
-          challenge?.my_work_id ||
-          challenge?.originalWorkId ||
-          challenge?.original_work_id ||
-          null,
-        tab,
-        title: challenge.title,
-        tags: [
-          {
-            text: challenge.field,
-            variant: getFieldVariant(challenge.field),
-          },
-          {
-            text: getDocTypeLabel(challenge.docType),
-            variant: getDocTypeVariant(challenge.docType),
-          },
-        ],
-        deadline: formatDeadline(challenge.deadlineAt),
-        participants: `${participantCount}/${maxParticipants} ${isFull ? "참여 완료" : "참여중"}`,
-        statusText: statusText || undefined,
-        isClosed: tab === "completed",
-      };
-    };
-
-    const mapRequestToRow = (request) => {
-      const statusKey = getRequestStatus(request);
-      return {
-        id: request.id,
-        field: request.field,
-        docType: getDocTypeLabel(request.docType),
-        title: request.title,
-        capacity: request.maxParticipants,
-        appliedAt: formatShortDate(request.createdAt),
-        deadline: formatShortDate(request.deadlineAt),
-        status: REQUEST_STATUS_LABEL_MAP[statusKey] || request.requestStatus || request.status,
-      };
-    };
-    const mapRequestToChallengeCard = (request) => {
-      const linkedChallengeId =
-        request?.challengeId ||
-        request?.challenge_id ||
-        request?.challenge?.id ||
-        request?.challenges?.[0]?.id ||
-        null;
-      const maxParticipants = request?.maxParticipants || 0;
-      return {
-        id: linkedChallengeId ? linkedChallengeId : `request-${request.id}`,
-        linkedChallengeId,
-        requestId: request?.id || null,
-        tab: "participating",
-        title: request.title,
-        tags: [
-          {
-            text: request.field,
-            variant: getFieldVariant(request.field),
-          },
-          {
-            text: getDocTypeLabel(request.docType),
-            variant: getDocTypeVariant(request.docType),
-          },
-        ],
-        deadline: formatDeadline(request.deadlineAt),
-        participants: `0/${maxParticipants} 참여중`,
-        statusText: undefined,
-        isClosed: false,
-      };
-    };
-
-    const fetchData = async () => {
+    const fetchCoreChallenges = async () => {
       setIsParticipatingLoading(true);
       setIsCompletedLoading(true);
-      setIsAppliedLoading(Boolean(userId));
       setLoadError("");
-      setAppliedLoadError("");
 
-      const [inProgressResult, closedResult, completedResult, requestsResult, createdInProgressResult] = await Promise.allSettled([
+      const [inProgressResult, closedResult, completedResult] = await Promise.allSettled([
         getMyChallenges({ challengeStatus: "IN_PROGRESS" }),
         getMyChallenges({ challengeStatus: "CLOSED" }),
         getMyChallenges({ challengeStatus: "COMPLETED" }),
-        userId ? getChallengeRequests({ userId }) : Promise.resolve(null),
-        userId ? getChallenges({ userId }) : Promise.resolve(null),
       ]);
 
       if (!isActive) return;
@@ -289,6 +285,34 @@ export default function MyChallengesPage() {
         setIsCompletedLoading(false);
       }
 
+    };
+
+    fetchCoreChallenges();
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+    if (!userId) {
+      setIsAppliedLoading(false);
+      return () => {
+        isActive = false;
+      };
+    }
+
+    const fetchUserLinkedChallenges = async () => {
+      setIsAppliedLoading(true);
+      setAppliedLoadError("");
+
+      const [requestsResult, createdInProgressResult] = await Promise.allSettled([
+        getChallengeRequests({ userId }),
+        getChallenges({ userId }),
+      ]);
+
+      if (!isActive) return;
+
       const createdInProgressListRaw =
         createdInProgressResult.status === "fulfilled"
           ? normalizeList(createdInProgressResult.value)
@@ -312,33 +336,29 @@ export default function MyChallengesPage() {
         );
       }
 
-      if (userId) {
-        if (requestsResult.status === "fulfilled") {
-          const requests = normalizeList(requestsResult.value);
-          setAppliedChallenges(requests.map(mapRequestToRow));
-          const approvedRequests = requests.filter(
-            (request) => getRequestStatus(request) === "APPROVED"
+      if (requestsResult.status === "fulfilled") {
+        const requests = normalizeList(requestsResult.value);
+        setAppliedChallenges(requests.map(mapRequestToRow));
+        const approvedRequests = requests.filter(
+          (request) => getRequestStatus(request) === "APPROVED"
+        );
+        const approvedCards = approvedRequests.map(mapRequestToChallengeCard);
+        if (approvedCards.length > 0) {
+          setParticipatingChallenges((prev) =>
+            mergeUniqueById([...prev, ...approvedCards])
           );
-          const approvedCards = approvedRequests.map(mapRequestToChallengeCard);
-          if (approvedCards.length > 0) {
-            setParticipatingChallenges((prev) =>
-              mergeUniqueById([...prev, ...approvedCards])
-            );
-          }
-          setIsAppliedLoading(false);
-        } else {
-          setAppliedChallenges([]);
-          setAppliedLoadError(
-            requestsResult.reason?.message || "신청 목록을 불러오지 못했습니다."
-          );
-          setIsAppliedLoading(false);
         }
+        setIsAppliedLoading(false);
       } else {
+        setAppliedChallenges([]);
+        setAppliedLoadError(
+          requestsResult.reason?.message || "신청 목록을 불러오지 못했습니다."
+        );
         setIsAppliedLoading(false);
       }
     };
 
-    fetchData();
+    fetchUserLinkedChallenges();
     return () => {
       isActive = false;
     };
@@ -672,7 +692,7 @@ export default function MyChallengesPage() {
                       detail?.challenges?.[0]?.id ||
                       null;
                     if (resolvedId) {
-                      router.push(`/challenge/${resolvedId}`);
+                      router.push(`/challengeDetail/${resolvedId}`);
                       return;
                     }
                     toast({
@@ -687,7 +707,7 @@ export default function MyChallengesPage() {
                   }
                   return;
                 }
-                router.push(`/challenge/${linkedId}`);
+                router.push(`/challengeDetail/${linkedId}`);
               }}
               onEdit={() => handleEditChallenge(challenge.id)}
               onDelete={() => handleDeleteChallenge(challenge.id)}
