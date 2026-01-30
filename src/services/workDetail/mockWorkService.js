@@ -94,14 +94,33 @@ export async function createFeedback(workId, content) {
 }
 
 /**
- * 피드백 더보기
+ * 피드백 목록 조회
  */
-export async function loadMoreFeedbacks(workId, page, size = 3) {
-  console.log(`[Mock] 피드백 더보기: workId=${workId}, page=${page}, size=${size}`);
+export async function getFeedbacks(workId, page = 1, limit = 5) {
+  console.log(`[Mock] 피드백 조회: workId=${workId}, page=${page}, limit=${limit}`);
   await new Promise((resolve) => setTimeout(resolve, 300));
   
-  // Mock에서는 이미 모든 피드백이 포함되어 있으므로 빈 배열 반환
-  return [];
+  const currentData = mockState[workId] || workDetailMockData[MOCK_DATA_TYPE];
+  const allFeedbacks = currentData.feedbacks || [];
+  const totalCount = allFeedbacks.length;
+  const totalPages = Math.ceil(totalCount / limit);
+  const start = (page - 1) * limit;
+  const feedbacks = allFeedbacks.slice(start, start + limit);
+  
+  return {
+    feedbacks,
+    totalCount,
+    totalPages,
+    currentPage: page,
+  };
+}
+
+/**
+ * 피드백 더보기 (하위 호환용)
+ */
+export async function loadMoreFeedbacks(workId, page, size = 5) {
+  const result = await getFeedbacks(workId, page, size);
+  return result.feedbacks;
 }
 
 /**
