@@ -15,6 +15,7 @@ import {
   hasDraftsForWork,
   saveDraft,
 } from '@/utils/draftStorage';
+import { getChallengeDetail } from '@/services/challenge';
 import ListIcon from '@/assets/icons/ic-list.svg';
 
 export default function WorkPage({ params }) {
@@ -22,7 +23,7 @@ export default function WorkPage({ params }) {
   const { challengeId, workId } = use(params);
   
   const [workData, setWorkData] = useState({
-    title: '개발자로써 자신만의 브랜드를 구축하는 방법(dailydev)',
+    title: '',
     content: '',
   });
   
@@ -40,8 +41,39 @@ export default function WorkPage({ params }) {
   
   const [editor, setEditor] = useState(null);
   const [updateKey, setUpdateKey] = useState(0);
-  const [sourceContent] = useState('https://ui.shadcn.com/docs/components');
+  const [sourceContent, setSourceContent] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // 챌린지 정보 로드
+  useEffect(() => {
+    let isActive = true;
+    const fetchChallengeData = async () => {
+      try {
+        setIsLoading(true);
+        const challengeData = await getChallengeDetail(challengeId);
+        if (!isActive) return;
+        
+        setWorkData(prev => ({
+          ...prev,
+          title: challengeData.title || '',
+        }));
+        setSourceContent(challengeData.sourceUrl || '');
+      } catch (error) {
+        console.error('챌린지 정보 로드 실패:', error);
+      } finally {
+        if (isActive) {
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    fetchChallengeData();
+    return () => {
+      isActive = false;
+    };
+  }, [challengeId]);
   
+  // 임시저장 목록 로드
   useEffect(() => {
     const draftsForWork = getDraftsForWork(challengeId, workId);
     setDraftState({
