@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Gnb from "@/components/common/GNB/Gnb";
 import Button from "@/components/common/Button/Button";
@@ -23,22 +22,14 @@ import Logo from "@/assets/icons/ic-logo.svg";
 
 export default function Home() {
   const [user, setUser] = useState({ isLoggedIn: false, role: "guest" });
-  const router = useRouter();
 
   useEffect(() => {
     let isActive = true;
-    let hasRedirected = false;
 
     const fetchUser = async () => {
       try {
         const userData = await getCurrentUser();
-        if (!isActive || hasRedirected) return;
-        
-        if (userData?.isLoggedIn && userData?.role === "member") {
-          hasRedirected = true;
-          router.replace("/challenges-show");
-          return;
-        }
+        if (!isActive) return;
         setUser(userData);
       } catch {
         if (isActive) {

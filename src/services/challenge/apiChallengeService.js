@@ -3,6 +3,8 @@
 
 // 백엔드 API URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://team1-back-1.onrender.com";
+const CACHE_TTL_MS = 30 * 1000;
+const requestCache = new Map();
 
 const getStoredToken = () => {
   if (typeof window !== "undefined") {
@@ -41,6 +43,41 @@ async function request(path, { method = "GET", body } = {}) {
   throw new Error(errorMessage);
 }
 
+async function cachedRequest(path, { method = "GET", body } = {}) {
+  if (method !== "GET" || body) {
+    return request(path, { method, body });
+  }
+
+  const token = getStoredToken();
+  const cacheKey = `${method}:${path}:token:${token || "anon"}`;
+  const now = Date.now();
+  const cached = requestCache.get(cacheKey);
+
+  if (cached?.data && cached.expiresAt > now) {
+    return cached.data;
+  }
+
+  if (cached?.promise) {
+    return cached.promise;
+  }
+
+  const promise = request(path, { method })
+    .then((data) => {
+      requestCache.set(cacheKey, {
+        data,
+        expiresAt: Date.now() + CACHE_TTL_MS,
+      });
+      return data;
+    })
+    .catch((error) => {
+      requestCache.delete(cacheKey);
+      throw error;
+    });
+
+  requestCache.set(cacheKey, { promise, expiresAt: now + CACHE_TTL_MS });
+  return promise;
+}
+
 function buildQuery(params = {}) {
   const entries = Object.entries(params).filter(
     ([, value]) => value !== undefined && value !== null && value !== ""
@@ -54,7 +91,7 @@ function buildQuery(params = {}) {
 
 export async function getChallenges({ userId, challengeStatus, field, docType, page, limit } = {}) {
   const query = buildQuery({ userId, challengeStatus, field, docType, page, limit });
-  const data = await request(`/challenges${query}`);
+  const data = await cachedRequest(`/challenges${query}`);
   return {
     challenges: data?.data || [],
     totalCount: data?.totalCount || 0,
@@ -65,7 +102,7 @@ export async function getChallenges({ userId, challengeStatus, field, docType, p
 
 export async function getMyChallenges({ challengeStatus, field, docType, page, limit } = {}) {
   const query = buildQuery({ challengeStatus, field, docType, page, limit });
-  const data = await request(`/challenges/my${query}`);
+  const data = await cachedRequest(`/challenges/my${query}`);
   // page.js의 normalizeList가 value.data를 찾으므로 data 키로 반환
   return {
     data: data?.data || [],
@@ -77,12 +114,12 @@ export async function getMyChallenges({ challengeStatus, field, docType, page, l
 
 export async function getChallengeRequests({ userId, requestStatus } = {}) {
   const query = buildQuery({ userId, requestStatus });
-  const data = await request(`/challenges/requests${query}`);
+  const data = await cachedRequest(`/challenges/requests${query}`);
   return data?.data || [];
 }
 
 export async function getChallengeRequestDetail(requestId) {
-  const data = await request(`/challenges/requests/${requestId}`);
+  const data = await cachedRequest(`/challenges/requests/${requestId}`);
   return data?.data || data;
 }
 
@@ -146,13 +183,32 @@ export async function joinChallenge(challengeId) {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}/challenges/${challengeId}/participants`, {
+    const numChallengeId =
+      typeof challengeId === 'string' ? parseInt(challengeId, 10) : challengeId;
+
+    const response = await fetch(`${API_BASE_URL}/challenges/${numChallengeId}/participants`, {
       method: 'POST',
       headers,
     });
 
     if (!response.ok) {
-      throw new Error('챌린지 참여 실패');
+      let errorMessage = '챌린지 참여 실패';
+      try {
+        const errorText = await response.text();
+        try {
+          const parsed = JSON.parse(errorText);
+          errorMessage = parsed?.message || errorText || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        if (errorMessage.includes('이미 참여 신청한 챌린지')) {
+          return { alreadyJoined: true };
+        }
+        console.error('챌린지 참여 실패 응답:', response.status, errorText);
+      } catch {
+        // ignore
+      }
+      throw new Error(errorMessage);
     }
 
     return await response.json();
@@ -218,12 +274,12 @@ export async function getMyWork(challengeId, userId) {
 
     // challengeId와 userId를 숫자로 변환 (백엔드가 Int 타입을 기대함)
     const numChallengeId = typeof challengeId === 'string' ? parseInt(challengeId, 10) : challengeId;
-    const numUserId = userId ? (typeof userId === 'string' ? parseInt(userId, 10) : userId) : null;
+    const numUserId =
+      userId ? (typeof userId === 'string' ? parseInt(userId, 10) : userId) : null;
 
-    // userId가 있으면 필터링, 없으면 모든 Work 조회
-    const url = numUserId 
-      ? `${API_BASE_URL}/works?challengeId=${numChallengeId}&userId=${numUserId}`
-      : `${API_BASE_URL}/works?challengeId=${numChallengeId}`;
+    // 백엔드가 query string의 userId를 Int로 파싱하지 않아 500 발생.
+    // userId 없이 조회 후 클라이언트에서 필터링한다.
+    const url = `${API_BASE_URL}/works?challengeId=${numChallengeId}`;
     
     const response = await fetch(url, {
       headers,
@@ -237,8 +293,13 @@ export async function getMyWork(challengeId, userId) {
 
     const result = await response.json();
     const works = result?.data || result?.items || [];
-    // 현재 사용자의 Work 중 첫 번째 것 반환 (보통 1개)
-    return works.length > 0 ? works[0] : null;
+    if (!numUserId) {
+      return works.length > 0 ? works[0] : null;
+    }
+    const matched = works.find((work) =>
+      String(work?.userId ?? work?.user_id ?? '') === String(numUserId)
+    );
+    return matched || null;
   } catch (error) {
     console.error('getMyWork 에러:', error);
     throw error;

@@ -8,6 +8,7 @@ import ClockIconM from '@/assets/icons/ic-deadline-m.svg';
 import PersonYellowIcon from '@/assets/icons/ic-person-s-yellow.svg';
 import MeatballsIcon from '@/assets/icons/ic-meatballs-menu.svg';
 import ArrowRightIcon from '@/assets/icons/ic-arrow-right.svg';
+import ListIcon from '@/assets/icons/ic-list.svg';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -29,12 +30,14 @@ export default function ChallengeCard({
   isAdmin = false,
   showAction = false,
   actionLabel = '도전 계속하기',
+  actionVariant = 'primary',
   onAction,
   onClick,
   onEdit,
   onDelete,
   className,
 }) {
+  const isWorkAction = actionVariant === 'work';
   return (
     <div
       className={cn(
@@ -136,13 +139,20 @@ export default function ChallengeCard({
                 if (onAction) onAction();
               }}
               className={cn(
-                'ml-auto flex shrink-0 items-center justify-center gap-1 rounded-full border border-[var(--gray-800)] bg-white transition-colors hover:bg-[var(--gray-50)]',
+                isWorkAction
+                  ? 'ml-auto flex shrink-0 items-center justify-center gap-2 rounded-full border border-[var(--gray-200)] bg-white px-4 py-2 font-14-bold text-[var(--gray-800)]'
+                  : 'ml-auto flex shrink-0 items-center justify-center gap-1 rounded-full border border-[var(--gray-800)] bg-white transition-colors hover:bg-[var(--gray-50)]',
                 'self-end md:self-auto',
-                'h-[33px] px-4 font-12-bold text-[var(--gray-800)] sm:h-auto sm:py-2 sm:pl-5 sm:pr-4 sm:font-16-bold'
+                !isWorkAction &&
+                  'h-[33px] px-4 font-12-bold text-[var(--gray-800)] sm:h-auto sm:py-2 sm:pl-5 sm:pr-4 sm:font-16-bold'
               )}
             >
               <span className="whitespace-nowrap">{actionLabel}</span>
-              <ArrowRightIcon className="size-4 sm:size-5 shrink-0" />
+              {isWorkAction ? (
+                <ListIcon className="size-6 shrink-0" />
+              ) : (
+                <ArrowRightIcon className="size-4 sm:size-5 shrink-0" />
+              )}
             </button>
           ) : null}
         </div>

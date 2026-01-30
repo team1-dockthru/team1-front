@@ -136,7 +136,6 @@ export default function MyChallengesPage() {
   }, []);
 
   useEffect(() => {
-    if (!userId) return;
     let isActive = true;
 
     const getRequestStatus = (request) => {
@@ -154,6 +153,9 @@ export default function MyChallengesPage() {
       return [];
     };
 
+    const mergeUniqueById = (items = []) =>
+      Array.from(new Map(items.map((item) => [item.id, item])).values());
+
     const mapChallengeToCard = (challenge, tab) => {
       const participantCount = challenge?._count?.participants || 0;
       const maxParticipants = challenge?.maxParticipants || 0;
@@ -166,6 +168,14 @@ export default function MyChallengesPage() {
       return {
         id: challenge.id,
         originalWorkId: challenge?.originalWorkId || challenge?.original_work_id || null,
+        workId:
+          challenge?.workId ||
+          challenge?.work_id ||
+          challenge?.myWorkId ||
+          challenge?.my_work_id ||
+          challenge?.originalWorkId ||
+          challenge?.original_work_id ||
+          null,
         tab,
         title: challenge.title,
         tags: [
@@ -230,10 +240,9 @@ export default function MyChallengesPage() {
     };
 
     const fetchData = async () => {
-      setIsLoading(true);
       setIsParticipatingLoading(true);
       setIsCompletedLoading(true);
-      setIsAppliedLoading(true);
+      setIsAppliedLoading(Boolean(userId));
       setLoadError("");
       setAppliedLoadError("");
 
@@ -241,19 +250,21 @@ export default function MyChallengesPage() {
         getMyChallenges({ challengeStatus: "IN_PROGRESS" }),
         getMyChallenges({ challengeStatus: "CLOSED" }),
         getMyChallenges({ challengeStatus: "COMPLETED" }),
-        getChallengeRequests({ userId }),
-        getChallenges({ userId }),
+        userId ? getChallengeRequests({ userId }) : Promise.resolve(null),
+        userId ? getChallenges({ userId }) : Promise.resolve(null),
       ]);
 
       if (!isActive) return;
 
       let participatingCards = [];
-      let createdCards = [];
 
       if (inProgressResult.status === "fulfilled") {
         const inProgressList = normalizeList(inProgressResult.value);
         participatingCards = inProgressList.map((challenge) =>
           mapChallengeToCard(challenge, "participating")
+        );
+        setParticipatingChallenges((prev) =>
+          mergeUniqueById([...participatingCards, ...prev])
         );
         setIsParticipatingLoading(false);
       } else {
@@ -290,36 +301,41 @@ export default function MyChallengesPage() {
         createdInProgressListRaw.length > 0
           ? createdInProgressListRaw
           : createdInProgressList;
-      createdCards = createdSource.map((challenge) =>
+      const createdCards = createdSource.map((challenge) =>
         mapChallengeToCard(challenge, "participating")
       );
       setCreatedChallenges(createdCards);
       setCreatedChallengesDebug(createdSource);
-
-      const baseMerged = [...participatingCards, ...createdCards];
-      const baseUnique = Array.from(new Map(baseMerged.map((item) => [item.id, item])).values());
-      setParticipatingChallenges(baseUnique);
-
-      if (requestsResult.status === "fulfilled") {
-        const requests = normalizeList(requestsResult.value);
-        setAppliedChallenges(requests.map(mapRequestToRow));
-        const approvedRequests = requests.filter(
-          (request) => getRequestStatus(request) === "APPROVED"
+      if (createdCards.length > 0) {
+        setParticipatingChallenges((prev) =>
+          mergeUniqueById([...prev, ...createdCards])
         );
-        const approvedCards = approvedRequests.map(mapRequestToChallengeCard);
-        const merged = [...baseUnique, ...approvedCards];
-        const unique = Array.from(new Map(merged.map((item) => [item.id, item])).values());
-        setParticipatingChallenges(unique);
-        setIsAppliedLoading(false);
-      } else {
-        setAppliedChallenges([]);
-        setAppliedLoadError(
-          requestsResult.reason?.message || "신청 목록을 불러오지 못했습니다."
-        );
-        setIsAppliedLoading(false);
       }
 
-      setIsLoading(false);
+      if (userId) {
+        if (requestsResult.status === "fulfilled") {
+          const requests = normalizeList(requestsResult.value);
+          setAppliedChallenges(requests.map(mapRequestToRow));
+          const approvedRequests = requests.filter(
+            (request) => getRequestStatus(request) === "APPROVED"
+          );
+          const approvedCards = approvedRequests.map(mapRequestToChallengeCard);
+          if (approvedCards.length > 0) {
+            setParticipatingChallenges((prev) =>
+              mergeUniqueById([...prev, ...approvedCards])
+            );
+          }
+          setIsAppliedLoading(false);
+        } else {
+          setAppliedChallenges([]);
+          setAppliedLoadError(
+            requestsResult.reason?.message || "신청 목록을 불러오지 못했습니다."
+          );
+          setIsAppliedLoading(false);
+        }
+      } else {
+        setIsAppliedLoading(false);
+      }
     };
 
     fetchData();
@@ -617,48 +633,67 @@ export default function MyChallengesPage() {
           </div>
         ) : filteredChallenges.length > 0 ? (
           <div className="flex flex-col gap-6">
-        {filteredChallenges.map((challenge) => (
-              <ChallengeCard
-                key={challenge.id}
-                {...challenge}
-                isAdmin={isAdmin}
-                showAction={!isAdmin && activeTab === "participating"}
-                onAction={async () => {
-                  const linkedId = challenge.linkedChallengeId || challenge.id;
-                  if (String(linkedId).startsWith("request-")) {
-                    const requestId =
-                      challenge.requestId ||
-                      String(linkedId).replace("request-", "");
-                    try {
-                      const detail = await getChallengeRequestDetail(requestId);
-                      const resolvedId =
-                        detail?.challengeId ||
-                        detail?.challenge_id ||
-                        detail?.challenge?.id ||
-                        detail?.challenges?.[0]?.id ||
-                        null;
-                      if (resolvedId) {
-                        router.push(`/challenge/${resolvedId}`);
-                        return;
-                      }
-                      toast({
-                        title: "이동할 챌린지가 없습니다.",
-                        description: "승인된 챌린지가 아직 생성되지 않았습니다.",
-                      });
-                    } catch (error) {
-                      toast({
-                        title: "이동 실패",
-                        description: error.message || "챌린지를 불러오지 못했습니다.",
-                      });
-                    }
+        {filteredChallenges.map((challenge) => {
+          const isCompletedTab = activeTab === "completed";
+          const canShowWorkButton = Boolean(challenge.workId);
+
+          return (
+            <ChallengeCard
+              key={challenge.id}
+              {...challenge}
+              isAdmin={isAdmin}
+              showAction={!isAdmin && (activeTab === "participating" || isCompletedTab)}
+              actionLabel={isCompletedTab ? "내 작업물 보기" : "도전 계속하기"}
+              actionVariant={isCompletedTab ? "work" : "primary"}
+              onAction={async () => {
+                if (isCompletedTab) {
+                  if (!canShowWorkButton) {
+                    toast({
+                      title: "작업물을 찾을 수 없습니다.",
+                      description: "연결된 작업물이 아직 없습니다.",
+                    });
                     return;
                   }
-                  router.push(`/challenge/${linkedId}`);
-                }}
-                onEdit={() => handleEditChallenge(challenge.id)}
-                onDelete={() => handleDeleteChallenge(challenge.id)}
-              />
-            ))}
+                  router.push(`/workDetail/${challenge.workId}`);
+                  return;
+                }
+
+                const linkedId = challenge.linkedChallengeId || challenge.id;
+                if (String(linkedId).startsWith("request-")) {
+                  const requestId =
+                    challenge.requestId ||
+                    String(linkedId).replace("request-", "");
+                  try {
+                    const detail = await getChallengeRequestDetail(requestId);
+                    const resolvedId =
+                      detail?.challengeId ||
+                      detail?.challenge_id ||
+                      detail?.challenge?.id ||
+                      detail?.challenges?.[0]?.id ||
+                      null;
+                    if (resolvedId) {
+                      router.push(`/challenge/${resolvedId}`);
+                      return;
+                    }
+                    toast({
+                      title: "이동할 챌린지가 없습니다.",
+                      description: "승인된 챌린지가 아직 생성되지 않았습니다.",
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "이동 실패",
+                      description: error.message || "챌린지를 불러오지 못했습니다.",
+                    });
+                  }
+                  return;
+                }
+                router.push(`/challenge/${linkedId}`);
+              }}
+              onEdit={() => handleEditChallenge(challenge.id)}
+              onDelete={() => handleDeleteChallenge(challenge.id)}
+            />
+          );
+        })}
           </div>
         ) : (
           <div className="flex min-h-[420px] items-center justify-center text-center">

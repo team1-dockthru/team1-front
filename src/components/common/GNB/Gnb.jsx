@@ -14,7 +14,8 @@ import UserDropdown from "@/components/common/UserDropdown/UserDropdown";
 
 import { cn } from "@/lib/utils";
 import NotificationModal from "@/components/common/NotificationModal/NotificationModal";
-import { logout } from "@/services/user";
+import { getCurrentUser, logout } from "@/services/user";
+import { getChallenges, getChallengeRequests, getMyChallenges } from "@/services/challenge";
 import { useAuthStore } from "@/store/authStore";
 import { getNotifications, markNotificationRead } from "@/services/notification";
 
@@ -42,12 +43,51 @@ export default function Gnb({
   const pathname = usePathname();
   const clearToken = useAuthStore((state) => state.clearToken);
   const storedToken = useAuthStore((state) => state.token);
+  const [isClient, setIsClient] = useState(false);
+  const [resolvedUser, setResolvedUser] = useState(user || null);
+  const prefetchMyChallengesRef = useRef(false);
   const [localNotifications, setLocalNotifications] = useState(notifications);
   const hasUnread = localNotifications.some((noti) => !noti?.readAt);
   const derivedHasNotification =
     typeof hasNotification === "boolean" ? hasNotification : hasUnread;
-  const resolvedIsLoggedIn = Boolean(isLoggedIn || storedToken);
+  const resolvedIsLoggedIn = isClient
+    ? Boolean(isLoggedIn || storedToken)
+    : Boolean(isLoggedIn);
   const lastNotificationsSigRef = useRef("");
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    setResolvedUser(user || null);
+  }, [user]);
+
+  useEffect(() => {
+    let isActive = true;
+    const shouldFetchUser =
+      resolvedIsLoggedIn &&
+      !user &&
+      !userDropdownProps?.user?.name;
+
+    if (!shouldFetchUser) return;
+
+    const fetchUser = async () => {
+      try {
+        const response = await getCurrentUser();
+        if (!isActive) return;
+        setResolvedUser(response?.user || null);
+      } catch {
+        if (!isActive) return;
+        setResolvedUser(null);
+      }
+    };
+
+    fetchUser();
+    return () => {
+      isActive = false;
+    };
+  }, [resolvedIsLoggedIn, user, userDropdownProps?.user?.name]);
 
   useEffect(() => {
     const signature = notifications
@@ -90,7 +130,11 @@ export default function Gnb({
   const BellIcon = derivedHasNotification ? BellNoti : BellEmpty;
   const ProfileIcon = role === 'admin' ? ProfileAdmin : ProfileMember;
   const isAdmin = role === 'admin';
-  const displayUserName = user?.nickname || user?.name || userDropdownProps?.user?.name || '사용자';
+  const displayUserName =
+    resolvedUser?.nickname ||
+    resolvedUser?.name ||
+    userDropdownProps?.user?.name ||
+    '사용자';
   const displayUserRole = role === 'admin' ? '관리자' : (userDropdownProps?.user?.role || '일반');
   const shouldUseUserDropdown = useUserDropdown || resolvedIsLoggedIn;
   const resolvedUserDropdownProps = {
@@ -115,6 +159,19 @@ export default function Gnb({
         clearToken();
         window.location.href = "/";
       }),
+  };
+
+  const prefetchMyChallenges = () => {
+    if (prefetchMyChallengesRef.current) return;
+    prefetchMyChallengesRef.current = true;
+    router.prefetch("/challenges-my");
+    const userId = resolvedUser?.id;
+    if (!userId) return;
+    void getMyChallenges({ challengeStatus: "IN_PROGRESS" });
+    void getMyChallenges({ challengeStatus: "CLOSED" });
+    void getMyChallenges({ challengeStatus: "COMPLETED" });
+    void getChallengeRequests({ userId });
+    void getChallenges({ userId });
   };
 
   const [isDevMenuOpen, setIsDevMenuOpen] = useState(false);
@@ -260,6 +317,7 @@ export default function Gnb({
               {shouldUseUserDropdown ? (
                 <UserDropdown
                   {...resolvedUserDropdownProps}
+                  onMyChallengePrefetch={prefetchMyChallenges}
                   user={{
                     ...resolvedUserDropdownProps.user,
                     role: isAdmin ? "관리자" : resolvedUserDropdownProps.user.role,
