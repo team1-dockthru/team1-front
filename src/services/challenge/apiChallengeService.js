@@ -66,11 +66,12 @@ export async function getChallenges({ userId, challengeStatus, field, docType, p
 export async function getMyChallenges({ challengeStatus, field, docType, page, limit } = {}) {
   const query = buildQuery({ challengeStatus, field, docType, page, limit });
   const data = await request(`/challenges/my${query}`);
+  // page.js의 normalizeList가 value.data를 찾으므로 data 키로 반환
   return {
-    challenges: data?.data || [],
-    totalCount: data?.totalCount || 0,
-    totalPages: data?.totalPages || 1,
-    currentPage: data?.currentPage || page || 1,
+    data: data?.data || [],
+    totalCount: data?.pagination?.totalCount || 0,
+    totalPages: data?.pagination?.totalPages || 1,
+    currentPage: data?.pagination?.currentPage || page || 1,
   };
 }
 
