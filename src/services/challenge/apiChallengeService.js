@@ -138,11 +138,17 @@ export async function getChallengeDetail(challengeId) {
  */
 export async function joinChallenge(challengeId) {
   try {
+    const token = getStoredToken();
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}/challenges/${challengeId}/participants`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -152,6 +158,89 @@ export async function joinChallenge(challengeId) {
     return await response.json();
   } catch (error) {
     console.error('joinChallenge 에러:', error);
+    throw error;
+  }
+}
+
+/**
+ * Work 생성
+ */
+export async function createWork(challengeId, title, content, originalUrl) {
+  try {
+    const token = getStoredToken();
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    // challengeId를 숫자로 변환 (백엔드가 Int 타입을 기대함)
+    const numChallengeId = typeof challengeId === 'string' ? parseInt(challengeId, 10) : challengeId;
+
+    const response = await fetch(`${API_BASE_URL}/works`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        challengeId: numChallengeId,
+        title: title || '작업물',
+        content: content || '', // 백엔드가 content를 필수로 요구하므로 빈 문자열이라도 전달
+        originalUrl: originalUrl || null,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('작업물 생성 실패 응답:', response.status, errorText);
+      throw new Error('작업물 생성 실패');
+    }
+
+    const result = await response.json();
+    return result?.data || result;
+  } catch (error) {
+    console.error('createWork 에러:', error);
+    throw error;
+  }
+}
+
+/**
+ * 현재 사용자의 Work 조회 (챌린지별)
+ */
+export async function getMyWork(challengeId, userId) {
+  try {
+    const token = getStoredToken();
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    // challengeId와 userId를 숫자로 변환 (백엔드가 Int 타입을 기대함)
+    const numChallengeId = typeof challengeId === 'string' ? parseInt(challengeId, 10) : challengeId;
+    const numUserId = userId ? (typeof userId === 'string' ? parseInt(userId, 10) : userId) : null;
+
+    // userId가 있으면 필터링, 없으면 모든 Work 조회
+    const url = numUserId 
+      ? `${API_BASE_URL}/works?challengeId=${numChallengeId}&userId=${numUserId}`
+      : `${API_BASE_URL}/works?challengeId=${numChallengeId}`;
+    
+    const response = await fetch(url, {
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('작업물 조회 실패 응답:', response.status, errorText);
+      throw new Error('작업물 조회 실패');
+    }
+
+    const result = await response.json();
+    const works = result?.data || result?.items || [];
+    // 현재 사용자의 Work 중 첫 번째 것 반환 (보통 1개)
+    return works.length > 0 ? works[0] : null;
+  } catch (error) {
+    console.error('getMyWork 에러:', error);
     throw error;
   }
 }
@@ -189,45 +278,53 @@ export async function deleteChallenge(challengeId) {
  * API 응답을 공통 인터페이스로 변환
  */
 function adaptChallengeToCommon(apiData) {
-  // 참여자 수: _count.participants 또는 participant_count
-  const participantCount = apiData._count?.participants ?? apiData.participant_count ?? 0;
-  // 최대 참여자 수
-  const maxParticipants = apiData.maxParticipants ?? apiData.max_participants ?? 0;
-  // 생성자 정보: user 또는 author
-  const authorData = apiData.user || apiData.author;
-  // 마감일: deadlineAt 또는 deadline
-  const deadlineValue = apiData.deadlineAt || apiData.deadline;
-  // 챌린지 상태 변환
-  const getStatus = () => {
-    const status = apiData.challengeStatus || apiData.status;
-    if (status === 'CLOSED' || status === 'COMPLETED') return 'closed';
-    if (participantCount >= maxParticipants && maxParticipants > 0) return 'recruitClosed';
-    return 'live';
+  // docType을 한글로 변환
+  const docTypeToKorean = (docType) => {
+    if (docType === 'OFFICIAL_DOCUMENT') return '공식문서';
+    if (docType === 'BLOG') return '블로그';
+    return '공식문서'; // 기본값
   };
 
+  // challengeStatus를 프론트엔드 status로 변환
+  const mapChallengeStatus = (status) => {
+    if (status === 'CLOSED') return 'closed';
+    if (status === 'IN_PROGRESS') return 'live';
+    return 'live'; // 기본값
+  };
+
+  // 참여자 수 계산 (작성자 포함)
+  // 백엔드의 _count.participants는 ChallengeParticipant 테이블의 개수만 카운트하므로
+  // 작성자(userId)를 포함하기 위해 +1을 해야 합니다.
+  const participantCount = (apiData._count?.participants || 0) + 1; // 작성자 포함
+  const maxParticipants = apiData.maxParticipants || 15;
+  const isRecruitFull = participantCount >= maxParticipants;
+  
+  // status 결정: 마감되었거나 모집이 완료된 경우
+  let status = mapChallengeStatus(apiData.challengeStatus);
+  if (status === 'live' && isRecruitFull) {
+    status = 'recruitClosed';
+  }
+
   return {
-    challengeId: String(apiData.challenge_id || apiData.id),
-    title: apiData.title,
-    type: apiData.docType === 'OFFICIAL_DOCUMENT' || apiData.doc_type === 0 ? '공식문서' : '블로그',
-    category: apiData.field || apiData.category,
-    description: apiData.content || apiData.description,
+    challengeId: String(apiData.id),
+    title: apiData.title || '',
+    type: apiData.field || '', // field 값을 type으로 사용 (예: "프론트엔드", "Next.js" 등)
+    category: docTypeToKorean(apiData.docType), // "공식문서" 또는 "블로그"
+    description: apiData.content || '', // content를 description으로 사용
     author: {
-      userId: String(authorData?.user_id || authorData?.id || ''),
-      nickname: authorData?.nickname || '',
-      profileImage: authorData?.profileImage || 'USER',
+      userId: String(apiData.user?.id || ''),
+      nickname: apiData.user?.nickname || '',
     },
-    status: getStatus(),
-    deadline: formatDate(deadlineValue),
+    status: status, // 'live' | 'closed' | 'recruitClosed'
+    deadline: formatDate(apiData.deadlineAt), // deadlineAt을 deadline으로 변환
     participantCount: participantCount,
     maxParticipants: maxParticipants,
-    originalWorkId: String(apiData.original_work_id || ''),
-    isMine: apiData.is_mine ?? false,
-    isParticipating: apiData.is_participating ?? false,
-    topTranslations: (apiData.top_translations || []).map(adaptTranslation),
-    participants: (apiData.participants || []).map(adaptParticipant),
-    // 원본 데이터도 포함 (필요시 사용)
-    sourceUrl: apiData.sourceUrl || apiData.source_url,
-    worksCount: apiData._count?.works ?? 0,
+    sourceUrl: apiData.sourceUrl || '', // 챌린지 생성 시 입력한 원문 URL
+    originalWorkId: String(apiData.originalWorkId || ''), // 백엔드에 없을 수 있음
+    isMine: apiData.isMine || false, // 백엔드에 없을 수 있음
+    isParticipating: apiData.isParticipating || false, // 백엔드에 없을 수 있음
+    topTranslations: (apiData.topTranslations || []).map(adaptTranslation), // 백엔드에 없을 수 있음
+    participants: (apiData.participants || []).map(adaptParticipant), // 백엔드에 없을 수 있음
   };
 }
 

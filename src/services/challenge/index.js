@@ -21,4 +21,6 @@ export const {
   getMyChallenges,
   getChallengeRequests,
   getChallengeRequestDetail,
+  createWork,
+  getMyWork,
 } = challengeService;

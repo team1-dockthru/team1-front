@@ -8,6 +8,7 @@ export default function ActionCard({
   maxParticipants = 0,
   onPrimaryClick,
   onSecondaryClick,
+  secondaryButtonText = "작업 도전하기",
   className,
 }) {
   return (
@@ -53,7 +54,7 @@ export default function ActionCard({
             "transition-opacity hover:opacity-90 active:opacity-100"
           )}
         >
-          작업 도전하기
+          {secondaryButtonText}
         </button>
       </div>
     </div>
