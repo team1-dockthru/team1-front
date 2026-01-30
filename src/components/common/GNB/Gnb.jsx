@@ -42,12 +42,19 @@ export default function Gnb({
   const pathname = usePathname();
   const clearToken = useAuthStore((state) => state.clearToken);
   const storedToken = useAuthStore((state) => state.token);
+  const [isClient, setIsClient] = useState(false);
   const [localNotifications, setLocalNotifications] = useState(notifications);
   const hasUnread = localNotifications.some((noti) => !noti?.readAt);
   const derivedHasNotification =
     typeof hasNotification === "boolean" ? hasNotification : hasUnread;
-  const resolvedIsLoggedIn = Boolean(isLoggedIn || storedToken);
+  const resolvedIsLoggedIn = isClient
+    ? Boolean(isLoggedIn || storedToken)
+    : Boolean(isLoggedIn);
   const lastNotificationsSigRef = useRef("");
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     const signature = notifications
