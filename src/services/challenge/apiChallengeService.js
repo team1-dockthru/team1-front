@@ -103,9 +103,10 @@ export async function getChallenges({ userId, challengeStatus, field, docType, p
 export async function getMyChallenges({ challengeStatus, field, docType, page, limit } = {}) {
   const query = buildQuery({ challengeStatus, field, docType, page, limit });
   const data = await cachedRequest(`/challenges/my${query}`);
+  // 백엔드: { challenges: [...], pagination: {...} }
   // page.js의 normalizeList가 value.data를 찾으므로 data 키로 반환
   return {
-    data: data?.data || [],
+    data: data?.challenges || data?.data || [],
     totalCount: data?.pagination?.totalCount || 0,
     totalPages: data?.pagination?.totalPages || 1,
     currentPage: data?.pagination?.currentPage || page || 1,
@@ -353,10 +354,9 @@ function adaptChallengeToCommon(apiData) {
     return 'live'; // 기본값
   };
 
-  // 참여자 수 계산 (작성자 포함)
-  // 백엔드의 _count.participants는 ChallengeParticipant 테이블의 개수만 카운트하므로
-  // 작성자(userId)를 포함하기 위해 +1을 해야 합니다.
-  const participantCount = (apiData._count?.participants || 0) + 1; // 작성자 포함
+  // 참여자 수 계산
+  // 백엔드에서 생성자도 참여자로 자동 등록되므로 _count.participants 그대로 사용
+  const participantCount = apiData._count?.participants || 0;
   const maxParticipants = apiData.maxParticipants || 15;
   const isRecruitFull = participantCount >= maxParticipants;
   
