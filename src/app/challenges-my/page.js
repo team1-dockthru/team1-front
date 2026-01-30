@@ -136,7 +136,6 @@ export default function MyChallengesPage() {
   }, []);
 
   useEffect(() => {
-    if (!userId) return;
     let isActive = true;
 
     const getRequestStatus = (request) => {
@@ -153,6 +152,9 @@ export default function MyChallengesPage() {
       if (value && Array.isArray(value.data)) return value.data;
       return [];
     };
+
+    const mergeUniqueById = (items = []) =>
+      Array.from(new Map(items.map((item) => [item.id, item])).values());
 
     const mapChallengeToCard = (challenge, tab) => {
       const participantCount = challenge?._count?.participants || 0;
@@ -230,10 +232,9 @@ export default function MyChallengesPage() {
     };
 
     const fetchData = async () => {
-      setIsLoading(true);
       setIsParticipatingLoading(true);
       setIsCompletedLoading(true);
-      setIsAppliedLoading(true);
+      setIsAppliedLoading(Boolean(userId));
       setLoadError("");
       setAppliedLoadError("");
 
@@ -241,19 +242,21 @@ export default function MyChallengesPage() {
         getMyChallenges({ challengeStatus: "IN_PROGRESS" }),
         getMyChallenges({ challengeStatus: "CLOSED" }),
         getMyChallenges({ challengeStatus: "COMPLETED" }),
-        getChallengeRequests({ userId }),
-        getChallenges({ userId }),
+        userId ? getChallengeRequests({ userId }) : Promise.resolve(null),
+        userId ? getChallenges({ userId }) : Promise.resolve(null),
       ]);
 
       if (!isActive) return;
 
       let participatingCards = [];
-      let createdCards = [];
 
       if (inProgressResult.status === "fulfilled") {
         const inProgressList = normalizeList(inProgressResult.value);
         participatingCards = inProgressList.map((challenge) =>
           mapChallengeToCard(challenge, "participating")
+        );
+        setParticipatingChallenges((prev) =>
+          mergeUniqueById([...participatingCards, ...prev])
         );
         setIsParticipatingLoading(false);
       } else {
@@ -290,36 +293,41 @@ export default function MyChallengesPage() {
         createdInProgressListRaw.length > 0
           ? createdInProgressListRaw
           : createdInProgressList;
-      createdCards = createdSource.map((challenge) =>
+      const createdCards = createdSource.map((challenge) =>
         mapChallengeToCard(challenge, "participating")
       );
       setCreatedChallenges(createdCards);
       setCreatedChallengesDebug(createdSource);
-
-      const baseMerged = [...participatingCards, ...createdCards];
-      const baseUnique = Array.from(new Map(baseMerged.map((item) => [item.id, item])).values());
-      setParticipatingChallenges(baseUnique);
-
-      if (requestsResult.status === "fulfilled") {
-        const requests = normalizeList(requestsResult.value);
-        setAppliedChallenges(requests.map(mapRequestToRow));
-        const approvedRequests = requests.filter(
-          (request) => getRequestStatus(request) === "APPROVED"
+      if (createdCards.length > 0) {
+        setParticipatingChallenges((prev) =>
+          mergeUniqueById([...prev, ...createdCards])
         );
-        const approvedCards = approvedRequests.map(mapRequestToChallengeCard);
-        const merged = [...baseUnique, ...approvedCards];
-        const unique = Array.from(new Map(merged.map((item) => [item.id, item])).values());
-        setParticipatingChallenges(unique);
-        setIsAppliedLoading(false);
-      } else {
-        setAppliedChallenges([]);
-        setAppliedLoadError(
-          requestsResult.reason?.message || "신청 목록을 불러오지 못했습니다."
-        );
-        setIsAppliedLoading(false);
       }
 
-      setIsLoading(false);
+      if (userId) {
+        if (requestsResult.status === "fulfilled") {
+          const requests = normalizeList(requestsResult.value);
+          setAppliedChallenges(requests.map(mapRequestToRow));
+          const approvedRequests = requests.filter(
+            (request) => getRequestStatus(request) === "APPROVED"
+          );
+          const approvedCards = approvedRequests.map(mapRequestToChallengeCard);
+          if (approvedCards.length > 0) {
+            setParticipatingChallenges((prev) =>
+              mergeUniqueById([...prev, ...approvedCards])
+            );
+          }
+          setIsAppliedLoading(false);
+        } else {
+          setAppliedChallenges([]);
+          setAppliedLoadError(
+            requestsResult.reason?.message || "신청 목록을 불러오지 못했습니다."
+          );
+          setIsAppliedLoading(false);
+        }
+      } else {
+        setIsAppliedLoading(false);
+      }
     };
 
     fetchData();

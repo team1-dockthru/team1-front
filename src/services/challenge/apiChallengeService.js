@@ -3,6 +3,8 @@
 
 // 백엔드 API URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://team1-back-1.onrender.com";
+const CACHE_TTL_MS = 30 * 1000;
+const requestCache = new Map();
 
 const getStoredToken = () => {
   if (typeof window !== "undefined") {
@@ -41,6 +43,41 @@ async function request(path, { method = "GET", body } = {}) {
   throw new Error(errorMessage);
 }
 
+async function cachedRequest(path, { method = "GET", body } = {}) {
+  if (method !== "GET" || body) {
+    return request(path, { method, body });
+  }
+
+  const token = getStoredToken();
+  const cacheKey = `${method}:${path}:token:${token || "anon"}`;
+  const now = Date.now();
+  const cached = requestCache.get(cacheKey);
+
+  if (cached?.data && cached.expiresAt > now) {
+    return cached.data;
+  }
+
+  if (cached?.promise) {
+    return cached.promise;
+  }
+
+  const promise = request(path, { method })
+    .then((data) => {
+      requestCache.set(cacheKey, {
+        data,
+        expiresAt: Date.now() + CACHE_TTL_MS,
+      });
+      return data;
+    })
+    .catch((error) => {
+      requestCache.delete(cacheKey);
+      throw error;
+    });
+
+  requestCache.set(cacheKey, { promise, expiresAt: now + CACHE_TTL_MS });
+  return promise;
+}
+
 function buildQuery(params = {}) {
   const entries = Object.entries(params).filter(
     ([, value]) => value !== undefined && value !== null && value !== ""
@@ -54,7 +91,7 @@ function buildQuery(params = {}) {
 
 export async function getChallenges({ userId, challengeStatus, field, docType, page, limit } = {}) {
   const query = buildQuery({ userId, challengeStatus, field, docType, page, limit });
-  const data = await request(`/challenges${query}`);
+  const data = await cachedRequest(`/challenges${query}`);
   return {
     challenges: data?.data || [],
     totalCount: data?.totalCount || 0,
@@ -65,7 +102,7 @@ export async function getChallenges({ userId, challengeStatus, field, docType, p
 
 export async function getMyChallenges({ challengeStatus, field, docType, page, limit } = {}) {
   const query = buildQuery({ challengeStatus, field, docType, page, limit });
-  const data = await request(`/challenges/my${query}`);
+  const data = await cachedRequest(`/challenges/my${query}`);
   // page.js의 normalizeList가 value.data를 찾으므로 data 키로 반환
   return {
     data: data?.data || [],
@@ -77,12 +114,12 @@ export async function getMyChallenges({ challengeStatus, field, docType, page, l
 
 export async function getChallengeRequests({ userId, requestStatus } = {}) {
   const query = buildQuery({ userId, requestStatus });
-  const data = await request(`/challenges/requests${query}`);
+  const data = await cachedRequest(`/challenges/requests${query}`);
   return data?.data || [];
 }
 
 export async function getChallengeRequestDetail(requestId) {
-  const data = await request(`/challenges/requests/${requestId}`);
+  const data = await cachedRequest(`/challenges/requests/${requestId}`);
   return data?.data || data;
 }
 
